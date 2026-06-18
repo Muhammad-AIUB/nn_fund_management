@@ -9,4 +9,12 @@
         <field name="company_id" eval="False"/>
     </record>
 
+    <record id="seq_fund_allocation" model="ir.sequence">
+        <field name="name">Fund Allocation</field>
+        <field name="code">nn.fund.allocation</field>
+        <field name="prefix">ALLOC/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
 </odoo>

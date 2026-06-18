@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class ExpenseHead(models.Model):
@@ -15,7 +15,20 @@ class ExpenseHead(models.Model):
     description = fields.Text()
     active = fields.Boolean(default=True)
 
+    allocation_ids = fields.One2many(
+        'nn.fund.allocation', 'expense_head_id', string='Allocations')
+
     _sql_constraints = [
         ('unique_expense_head_code', 'unique(code, company_id)',
          'Expense head code must be unique per company.'),
     ]
+
+    @api.depends('allocation_ids.amount', 'allocation_ids.state')
+    def _compute_fund_balances(self):
+        return super()._compute_fund_balances()
+
+    def _get_balance_components(self):
+        res = super()._get_balance_components()
+        approved = self.allocation_ids.filtered(lambda a: a.state == 'approved')
+        res['total_allocated'] = sum(approved.mapped('amount'))
+        return res

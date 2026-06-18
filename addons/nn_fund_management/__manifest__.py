@@ -35,9 +35,11 @@ spent more than once.
         'views/incoming_fund_views.xml',
         'views/project_views.xml',
         'views/expense_head_views.xml',
+        'views/fund_allocation_views.xml',
         'views/approval_history_views.xml',
         'views/menus.xml',
     ],
     'application': True,
     'installable': True,
+    'post_init_hook': 'post_init_hook',
 }

@@ -38,6 +38,8 @@ class FundAccount(models.Model):
 
     incoming_fund_ids = fields.One2many(
         'nn.incoming.fund', 'fund_account_id', string='Incoming Funds')
+    allocation_ids = fields.One2many(
+        'nn.fund.allocation', 'fund_account_id', string='Allocations')
 
     total_received = fields.Monetary(
         compute='_compute_balances', store=True,
@@ -53,15 +55,24 @@ class FundAccount(models.Model):
         help="Unassigned balance still free to allocate "
              "(received - assigned - on hold).")
 
-    @api.depends('incoming_fund_ids.amount', 'incoming_fund_ids.state')
+    # States in which an allocation reserves money on the account but has not
+    # yet been finalised into an assignment.
+    _ALLOCATION_HOLD_STATES = ('submitted', 'gm_approved')
+
+    @api.depends('incoming_fund_ids.amount', 'incoming_fund_ids.state',
+                 'allocation_ids.amount', 'allocation_ids.state')
     def _compute_balances(self):
         for account in self:
             confirmed = account.incoming_fund_ids.filtered(
                 lambda f: f.state == 'confirmed')
+            on_hold = account.allocation_ids.filtered(
+                lambda a: a.state in self._ALLOCATION_HOLD_STATES)
+            assigned = account.allocation_ids.filtered(
+                lambda a: a.state == 'approved')
+
             account.total_received = sum(confirmed.mapped('amount'))
-            # Extended in later steps once allocations exist.
-            account.assigned_amount = 0.0
-            account.on_hold_amount = 0.0
+            account.on_hold_amount = sum(on_hold.mapped('amount'))
+            account.assigned_amount = sum(assigned.mapped('amount'))
             account.available_balance = (
                 account.total_received
                 - account.assigned_amount

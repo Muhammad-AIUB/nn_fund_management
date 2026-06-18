@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_fund_allocation_tree" model="ir.ui.view">
+        <field name="name">nn.fund.allocation.tree</field>
+        <field name="model">nn.fund.allocation</field>
+        <field name="arch" type="xml">
+            <tree string="Fund Allocations">
+                <field name="name"/>
+                <field name="request_date"/>
+                <field name="fund_account_id"/>
+                <field name="target_type"/>
+                <field name="project_id" optional="show"/>
+                <field name="expense_head_id" optional="show"/>
+                <field name="amount" sum="Amount"/>
+                <field name="requested_by_id" optional="hide"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state in ('submitted','gm_approved')"
+                       decoration-success="state == 'approved'"
+                       decoration-danger="state == 'rejected'"
+                       decoration-muted="state == 'cancelled'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_fund_allocation_form" model="ir.ui.view">
+        <field name="name">nn.fund.allocation.form</field>
+        <field name="model">nn.fund.allocation</field>
+        <field name="arch" type="xml">
+            <form string="Fund Allocation">
+                <header>
+                    <button name="action_submit" type="object" string="Submit"
+                            class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_approve_wizard" type="object"
+                            string="Approve" class="oe_highlight"
+                            invisible="state not in ('submitted','gm_approved')"/>
+                    <button name="action_reject_wizard" type="object"
+                            string="Reject"
+                            invisible="state not in ('submitted','gm_approved')"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state in ('draft','rejected','cancelled')"/>
+                    <button name="action_reset_to_draft" type="object"
+                            string="Reset to Draft"
+                            invisible="state not in ('rejected','cancelled')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,submitted,gm_approved,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="fund_account_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="account_available"/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="target_type"
+                                   readonly="state != 'draft'" widget="radio"/>
+                            <field name="project_id"
+                                   invisible="target_type != 'project'"
+                                   required="target_type == 'project'"
+                                   readonly="state != 'draft'"/>
+                            <field name="expense_head_id"
+                                   invisible="target_type != 'expense_head'"
+                                   required="target_type == 'expense_head'"
+                                   readonly="state != 'draft'"/>
+                            <field name="company_id"
+                                   groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Request">
+                            <field name="requested_by_id" readonly="1"/>
+                            <field name="request_date"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Approvals">
+                            <field name="gm_user_id"/>
+                            <field name="gm_date"/>
+                            <field name="md_user_id"/>
+                            <field name="md_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Purpose" name="purpose">
+                            <field name="purpose" nolabel="1"
+                                   placeholder="Purpose of this allocation..."/>
+                        </page>
+                        <page string="Attachments" name="attachments">
+                            <field name="attachment_ids"
+                                   widget="many2many_binary" nolabel="1"/>
+                        </page>
+                        <page string="Approval History" name="history">
+                            <field name="approval_history_ids" nolabel="1"
+                                   readonly="1">
+                                <tree>
+                                    <field name="action_date"/>
+                                    <field name="action"/>
+                                    <field name="approval_level"/>
+                                    <field name="from_state"/>
+                                    <field name="to_state"/>
+                                    <field name="user_id"/>
+                                    <field name="comment"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_fund_allocation_search" model="ir.ui.view">
+        <field name="name">nn.fund.allocation.search</field>
+        <field name="model">nn.fund.allocation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="fund_account_id"/>
+                <field name="project_id"/>
+                <field name="expense_head_id"/>
+                <filter name="draft" string="Draft"
+                        domain="[('state','=','draft')]"/>
+                <filter name="pending" string="Pending Approval"
+                        domain="[('state','in',('submitted','gm_approved'))]"/>
+                <filter name="approved" string="Approved"
+                        domain="[('state','=','approved')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="grp_state" string="Status"
+                            context="{'group_by': 'state'}"/>
+                    <filter name="grp_account" string="Fund Account"
+                            context="{'group_by': 'fund_account_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_fund_allocation" model="ir.actions.act_window">
+        <field name="name">Fund Allocations</field>
+        <field name="res_model">nn.fund.allocation</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_fund_allocation_search"/>
+    </record>
+
+</odoo>

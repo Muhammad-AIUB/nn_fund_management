@@ -19,6 +19,12 @@
               action="action_incoming_fund"
               sequence="10"/>
 
+    <menuitem id="menu_fund_allocation"
+              name="Fund Allocations"
+              parent="menu_fund_operations"
+              action="action_fund_allocation"
+              sequence="20"/>
+
     <!-- Configuration -->
     <menuitem id="menu_fund_config"
               name="Configuration"
