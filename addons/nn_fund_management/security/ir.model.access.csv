@@ -23,3 +23,6 @@ access_fund_requisition_admin,fund.requisition.admin,model_nn_fund_requisition,g
 access_bill_user,bill.user,model_nn_bill,group_fund_user,1,1,1,0
 access_bill_finance,bill.finance,model_nn_bill,group_finance_user,1,1,1,0
 access_bill_admin,bill.admin,model_nn_bill,group_fund_admin,1,1,1,1
+access_fund_transfer_user,fund.transfer.user,model_nn_fund_transfer,group_fund_user,1,1,1,1
+access_fund_transfer_finance,fund.transfer.finance,model_nn_fund_transfer,group_finance_user,1,1,1,1
+access_fund_transfer_admin,fund.transfer.admin,model_nn_fund_transfer,group_fund_admin,1,1,1,1

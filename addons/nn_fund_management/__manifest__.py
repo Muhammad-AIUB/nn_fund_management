@@ -38,6 +38,7 @@ spent more than once.
         'views/fund_allocation_views.xml',
         'views/fund_requisition_views.xml',
         'views/bill_views.xml',
+        'views/fund_transfer_views.xml',
         'views/approval_history_views.xml',
         'views/menus.xml',
     ],

@@ -88,6 +88,19 @@ class FundTargetMixin(models.AbstractModel):
             # Spent = total posted-bill amount across the target's requisitions.
             c['total_spent'] = sum(self.requisition_ids.mapped('billed_amount'))
 
+        if 'transfer_out_ids' in self._fields:
+            pending_out = self.transfer_out_ids.filtered(
+                lambda t: t.state in ('submitted', 'gm_approved'))
+            approved_out = self.transfer_out_ids.filtered(
+                lambda t: t.state == 'approved')
+            c['transfer_hold'] = sum(pending_out.mapped('amount'))
+            c['outgoing_transfer'] = sum(approved_out.mapped('amount'))
+
+        if 'transfer_in_ids' in self._fields:
+            approved_in = self.transfer_in_ids.filtered(
+                lambda t: t.state == 'approved')
+            c['incoming_transfer'] = sum(approved_in.mapped('amount'))
+
         return c
 
     def _compute_fund_balances(self):
