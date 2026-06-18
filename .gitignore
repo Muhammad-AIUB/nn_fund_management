@@ -1,0 +1,18 @@
+# Claude Code session data
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Odoo
+*.log
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
