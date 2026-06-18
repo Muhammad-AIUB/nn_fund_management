@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_fund_account_tree" model="ir.ui.view">
+        <field name="name">nn.fund.account.tree</field>
+        <field name="model">nn.fund.account</field>
+        <field name="arch" type="xml">
+            <tree string="Fund Accounts">
+                <field name="name"/>
+                <field name="account_type"/>
+                <field name="bank_name"/>
+                <field name="total_received" sum="Total Received"/>
+                <field name="on_hold_amount" sum="On Hold"/>
+                <field name="assigned_amount" sum="Assigned"/>
+                <field name="available_balance" sum="Available"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_fund_account_form" model="ir.ui.view">
+        <field name="name">nn.fund.account.form</field>
+        <field name="model">nn.fund.account</field>
+        <field name="arch" type="xml">
+            <form string="Fund Account">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. NN Operating Account"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="account_type"/>
+                            <field name="code"/>
+                            <field name="bank_name"
+                                   invisible="account_type != 'bank'"/>
+                            <field name="account_number"
+                                   invisible="account_type != 'bank'"/>
+                        </group>
+                        <group>
+                            <field name="company_id"
+                                   groups="base.group_multi_company"/>
+                            <field name="currency_id"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Balances">
+                        <group>
+                            <field name="total_received"/>
+                            <field name="on_hold_amount"/>
+                        </group>
+                        <group>
+                            <field name="assigned_amount"/>
+                            <field name="available_balance"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Incoming Funds" name="incoming">
+                            <field name="incoming_fund_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="transaction_reference"/>
+                                    <field name="source"/>
+                                    <field name="amount" sum="Amount"/>
+                                    <field name="state"
+                                           decoration-success="state == 'confirmed'"
+                                           decoration-muted="state == 'cancelled'"
+                                           widget="badge"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_fund_account" model="ir.actions.act_window">
+        <field name="name">Fund Accounts</field>
+        <field name="res_model">nn.fund.account</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first fund account</p>
+            <p>Fund accounts represent the bank, cash or other accounts that hold company money.</p>
+        </field>
+    </record>
+
+</odoo>

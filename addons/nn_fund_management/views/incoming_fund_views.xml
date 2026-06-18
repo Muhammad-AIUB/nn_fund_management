@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_incoming_fund_tree" model="ir.ui.view">
+        <field name="name">nn.incoming.fund.tree</field>
+        <field name="model">nn.incoming.fund</field>
+        <field name="arch" type="xml">
+            <tree string="Incoming Funds">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="fund_account_id"/>
+                <field name="transaction_reference"/>
+                <field name="source"/>
+                <field name="amount" sum="Amount"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"
+                       decoration-muted="state == 'cancelled'"
+                       widget="badge"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_incoming_fund_form" model="ir.ui.view">
+        <field name="name">nn.incoming.fund.form</field>
+        <field name="model">nn.incoming.fund</field>
+        <field name="arch" type="xml">
+            <form string="Incoming Fund">
+                <header>
+                    <button name="action_confirm" type="object"
+                            string="Confirm" class="oe_highlight"
+                            invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object"
+                            string="Cancel"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_set_to_draft" type="object"
+                            string="Reset to Draft"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="fund_account_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="transaction_reference"
+                                   readonly="state != 'draft'"/>
+                            <field name="source" readonly="state != 'draft'"/>
+                            <field name="company_id"
+                                   groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="Details">
+                        <field name="description" nolabel="1"
+                               placeholder="Description..."/>
+                    </group>
+                    <group string="Attachments">
+                        <field name="attachment_ids" widget="many2many_binary"
+                               nolabel="1"/>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_incoming_fund" model="ir.actions.act_window">
+        <field name="name">Incoming Funds</field>
+        <field name="res_model">nn.incoming.fund</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Record an incoming fund</p>
+            <p>Once confirmed, the amount is added to the fund account's unassigned balance.</p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Root -->
+    <menuitem id="menu_fund_root"
+              name="Fund Management"
+              sequence="20"
+              groups="group_fund_user"/>
+
+    <!-- Operations -->
+    <menuitem id="menu_fund_operations"
+              name="Operations"
+              parent="menu_fund_root"
+              sequence="10"/>
+
+    <menuitem id="menu_incoming_fund"
+              name="Incoming Funds"
+              parent="menu_fund_operations"
+              action="action_incoming_fund"
+              sequence="10"/>
+
+    <!-- Configuration -->
+    <menuitem id="menu_fund_config"
+              name="Configuration"
+              parent="menu_fund_root"
+              sequence="90"
+              groups="group_finance_user"/>
+
+    <menuitem id="menu_fund_account"
+              name="Fund Accounts"
+              parent="menu_fund_config"
+              action="action_fund_account"
+              sequence="10"/>
+
+</odoo>

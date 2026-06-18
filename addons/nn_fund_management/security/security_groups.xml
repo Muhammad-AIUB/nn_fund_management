@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- Application category shown in user form / Settings -->
+    <record id="module_category_fund_management" model="ir.module.category">
+        <field name="name">Fund Management</field>
+        <field name="description">Access rights for the NN Fund Management module.</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- Base role: create and read own/allowed requests -->
+    <record id="group_fund_user" model="res.groups">
+        <field name="name">Fund User</field>
+        <field name="category_id" ref="module_category_fund_management"/>
+    </record>
+
+    <!-- Finance: confirm incoming funds, manage fund accounts -->
+    <record id="group_finance_user" model="res.groups">
+        <field name="name">Finance User</field>
+        <field name="category_id" ref="module_category_fund_management"/>
+        <field name="implied_ids" eval="[(4, ref('group_fund_user'))]"/>
+    </record>
+
+    <!-- First approval level -->
+    <record id="group_gm_approver" model="res.groups">
+        <field name="name">GM Approver</field>
+        <field name="category_id" ref="module_category_fund_management"/>
+        <field name="implied_ids" eval="[(4, ref('group_fund_user'))]"/>
+    </record>
+
+    <!-- Second approval level -->
+    <record id="group_md_approver" model="res.groups">
+        <field name="name">MD Approver</field>
+        <field name="category_id" ref="module_category_fund_management"/>
+        <field name="implied_ids" eval="[(4, ref('group_fund_user'))]"/>
+    </record>
+
+    <!-- Full administrative control over the module -->
+    <record id="group_fund_admin" model="res.groups">
+        <field name="name">Fund Administrator</field>
+        <field name="category_id" ref="module_category_fund_management"/>
+        <field name="implied_ids" eval="[(4, ref('group_finance_user')),
+                                          (4, ref('group_gm_approver')),
+                                          (4, ref('group_md_approver'))]"/>
+    </record>
+
+</odoo>

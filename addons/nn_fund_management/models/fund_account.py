@@ -1,0 +1,69 @@
+# -*- coding: utf-8 -*-
+from odoo import api, fields, models
+
+
+class FundAccount(models.Model):
+    """A bank, cash or other financial account that holds company funds.
+
+    The account exposes four headline balances, all computed (never edited by
+    hand) so that the figures always reconcile with the underlying documents:
+
+    * ``total_received``    - sum of confirmed incoming funds
+    * ``assigned_amount``   - funds approved into projects / expense heads
+    * ``on_hold_amount``    - funds reserved by pending allocation requests
+    * ``available_balance`` - unassigned balance still free to allocate
+
+    Only ``total_received`` is wired up in this step; ``assigned`` and
+    ``on_hold`` are extended once the allocation model exists.
+    """
+    _name = 'nn.fund.account'
+    _description = 'Fund Account'
+    _order = 'name'
+
+    name = fields.Char(string='Account Name', required=True)
+    code = fields.Char(string='Reference')
+    account_type = fields.Selection(
+        selection=[('bank', 'Bank'), ('cash', 'Cash'), ('other', 'Other')],
+        string='Account Type', default='bank', required=True)
+    bank_name = fields.Char()
+    account_number = fields.Char()
+    active = fields.Boolean(default=True)
+
+    company_id = fields.Many2one(
+        'res.company', string='Company', required=True,
+        default=lambda self: self.env.company)
+    currency_id = fields.Many2one(
+        'res.currency', related='company_id.currency_id',
+        store=True, readonly=True)
+
+    incoming_fund_ids = fields.One2many(
+        'nn.incoming.fund', 'fund_account_id', string='Incoming Funds')
+
+    total_received = fields.Monetary(
+        compute='_compute_balances', store=True,
+        help="Sum of all confirmed incoming funds.")
+    assigned_amount = fields.Monetary(
+        compute='_compute_balances', store=True,
+        help="Funds approved into projects or expense heads.")
+    on_hold_amount = fields.Monetary(
+        compute='_compute_balances', store=True,
+        help="Funds reserved by pending allocation requests.")
+    available_balance = fields.Monetary(
+        compute='_compute_balances', store=True,
+        help="Unassigned balance still free to allocate "
+             "(received - assigned - on hold).")
+
+    @api.depends('incoming_fund_ids.amount', 'incoming_fund_ids.state')
+    def _compute_balances(self):
+        for account in self:
+            confirmed = account.incoming_fund_ids.filtered(
+                lambda f: f.state == 'confirmed')
+            account.total_received = sum(confirmed.mapped('amount'))
+            # Extended in later steps once allocations exist.
+            account.assigned_amount = 0.0
+            account.on_hold_amount = 0.0
+            account.available_balance = (
+                account.total_received
+                - account.assigned_amount
+                - account.on_hold_amount
+            )
