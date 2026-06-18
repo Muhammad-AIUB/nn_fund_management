@@ -18,6 +18,9 @@ nn.bill                draws down an approved requisition (spend)
 nn.fund.transfer       target   → target    (move funds)
 
 nn.approval.history    Immutable audit log (generic res_model/res_id link)
+nn.approval.rule(.step) Configurable approval policy (ordered approver groups)
+nn.bank.email          Bank-notification parser -> incoming funds (prototype)
+nn.fund.dashboard      Transient live KPI/overview dashboard
 
 # Abstract mixins (no table, pure reuse)
 nn.fund.target.mixin   All balance fields + the balance formula

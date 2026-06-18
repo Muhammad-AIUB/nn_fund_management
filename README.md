@@ -102,7 +102,7 @@ docker compose up -d
 
 ## Testing instructions
 
-The module ships **22 automated tests** (unit/integration) covering balance
+The module ships **28 automated tests** (unit/integration) covering balance
 maths, double-spend prevention, approval rules and all server-side blocks.
 
 Run them on a throwaway database:
@@ -112,7 +112,7 @@ docker compose run --rm odoo odoo -d test_nn -i nn_fund_management \
   --test-enable --test-tags /nn_fund_management --stop-after-init
 ```
 
-Expected result: `0 failed, 0 error(s) of 22 tests`.
+Expected result: `0 failed, 0 error(s) of 28 tests`.
 
 > On Git Bash / MSYS, prefix the command with `MSYS_NO_PATHCONV=1` so the
 > `/nn_fund_management` test tag isn't rewritten into a Windows path.
@@ -148,6 +148,26 @@ Enforcement is **server-side**, not just hidden buttons:
 
 ---
 
+## Bonus features (all implemented)
+
+- **Configurable approval rules** — *Configuration → Approval Rules*. Match by
+  request type, amount range and company; define an ordered list of approver
+  groups (e.g. up to 50k → GM; 50k–200k → GM, Finance; above → GM, Finance,
+  MD). The matching rule is resolved at submission and frozen on the document.
+  A default GM→MD rule ships out of the box.
+- **Dashboard** — *Dashboard* menu. Live KPIs (received, unassigned, held,
+  assigned, spent, pending approvals) plus pending-approval, project-balance,
+  expense-balance and recent-movement lists.
+- **Activities & notifications** — approvers get a To-Do activity when their
+  step is reached; the requester is notified on approval/rejection; the
+  requisition is flagged when it is almost or fully billed. Best-effort, so a
+  missing mail server never blocks the workflow.
+- **Bank email integration** — *Operations → Bank Emails*. A mail alias
+  (`bank-funds`) or a manual paste feeds bank notifications through a parser
+  that creates incoming funds in *Pending Verification*; de-dupes by
+  message-id, detects duplicate references, and logs parse failures. No bank
+  credentials are stored in the code.
+
 ## Architecture
 
 See **[ARCHITECTURE.md](ARCHITECTURE.md)** for the model map, the balance
@@ -160,9 +180,9 @@ formula, how double-spending is prevented, and the reusable approval engine.
 - All amounts are in the **company currency** (BDT in the demo). No
   cross-currency conversion.
 - A **fund user is an internal employee** (the group implies *Internal User*).
-- "Configurable approvers" is implemented via **security groups**; any user in
-  the GM/MD group can act at that level. Per-amount approval matrices are noted
-  as a bonus, not implemented in the core.
+- "Configurable approvers" is implemented via **security groups** combined with
+  **approval rules**: any user in a step's group can act at that step, and the
+  required steps (and amount thresholds) are configured per rule.
 - The **bill** is a custom model (`nn.bill`) rather than an integration with
   Odoo Vendor Bills, to keep the fund-control rules self-contained and explicit.
 - Balances are **stored computed fields**; they recompute automatically from the
@@ -175,9 +195,11 @@ formula, how double-spending is prevented, and the reusable approval engine.
 - The unique transaction-reference constraint is per *(fund account, reference)*
   and also reserves the reference of a *cancelled* incoming fund.
 - No cross-currency / multi-currency support.
-- Bank-email ingestion, the configurable per-amount approval matrix, and the
-  graphical dashboard described in the brief are **bonus** items and are not
-  included in this submission.
+- The bank-email parser is a **prototype** tuned to a documented sample format
+  (`BDT <amount> in account XXXX#### from <name>. TrxID: <ref> on YYYY-MM-DD`);
+  real banks vary, so the regexes would need extending per bank. It also
+  depends on Odoo's incoming-mail routing (alias/fetchmail) being configured.
+- The dashboard is list/KPI based (no charts/graphs).
 - `post_init_hook` grants admin access on **install**; on an *upgrade* of a DB
   where groups were first created under `noupdate`, group definition changes may
   need a fresh install to fully apply (fresh installs are unaffected).
