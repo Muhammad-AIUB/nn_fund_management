@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
+
+_logger = logging.getLogger(__name__)
 
 
 class ApprovalMixin(models.AbstractModel):
@@ -117,6 +121,57 @@ class ApprovalMixin(models.AbstractModel):
                 "enable self-approval in the module settings."))
 
     # ------------------------------------------------------------------
+    # Activities & notifications
+    # ------------------------------------------------------------------
+    def _schedule_approver_activities(self, level):
+        """Schedule a To-Do activity for every user who can approve at the
+        given level, so the request shows up in their activity inbox.
+
+        Notifications are best-effort: a mail misconfiguration must never block
+        the financial workflow, so failures are logged, not raised."""
+        self.ensure_one()
+        if not hasattr(self, 'activity_schedule'):
+            return
+        group = self.env.ref(self._approver_group(level),
+                             raise_if_not_found=False)
+        if not group:
+            return
+        summary = _("%(level)s approval required: %(doc)s",
+                    level='GM' if level == 'gm' else 'MD',
+                    doc=self.display_name)
+        for user in group.users:
+            try:
+                self.activity_schedule(
+                    'mail.mail_activity_data_todo',
+                    user_id=user.id, summary=summary)
+            except Exception:  # noqa: BLE001 - notifications are best-effort
+                _logger.warning(
+                    "Could not schedule approval activity for %s on %s",
+                    user.login, self.display_name)
+
+    def _clear_approval_activities(self):
+        if hasattr(self, 'activity_unlink'):
+            self.activity_unlink(['mail.mail_activity_data_todo'])
+
+    def _notify_requester(self, body):
+        """Notify the requester via the document chatter (best-effort).
+
+        The requester is subscribed as a follower and a note is logged, so the
+        update appears on the document without depending on an outgoing mail
+        server."""
+        self.ensure_one()
+        if not hasattr(self, 'message_post'):
+            return
+        try:
+            partner = self.requested_by_id.partner_id
+            if partner:
+                self.message_subscribe(partner_ids=partner.ids)
+            self.message_post(body=body, subtype_xmlid='mail.mt_note')
+        except Exception:  # noqa: BLE001 - notifications are best-effort
+            _logger.warning("Could not notify requester on %s",
+                            self.display_name)
+
+    # ------------------------------------------------------------------
     # Hooks for concrete models (default: no-op)
     # ------------------------------------------------------------------
     def _check_can_submit(self):
@@ -146,6 +201,7 @@ class ApprovalMixin(models.AbstractModel):
             rec.state = 'submitted'
             rec._log_approval('submit', from_state='draft',
                               to_state='submitted')
+            rec._schedule_approver_activities('gm')
             rec._on_submit()
         return True
 
@@ -161,6 +217,8 @@ class ApprovalMixin(models.AbstractModel):
             })
             self._log_approval('gm_approve', 'gm', 'submitted',
                                'gm_approved', comment)
+            self._clear_approval_activities()
+            self._schedule_approver_activities('md')
         elif self.state == 'gm_approved':
             self._check_approver('md')
             self._check_not_self_approval()
@@ -171,6 +229,10 @@ class ApprovalMixin(models.AbstractModel):
             })
             self._log_approval('md_approve', 'md', 'gm_approved',
                                'approved', comment)
+            self._clear_approval_activities()
+            self._notify_requester(
+                _("Your request %s has been fully approved.",
+                  self.display_name))
             self._on_final_approve()
         else:
             raise UserError(_("This request is not awaiting approval."))
@@ -188,6 +250,10 @@ class ApprovalMixin(models.AbstractModel):
         from_state = self.state
         self.state = 'rejected'
         self._log_approval('reject', level, from_state, 'rejected', comment)
+        self._clear_approval_activities()
+        self._notify_requester(
+            _("Your request %(doc)s was rejected. Reason: %(reason)s",
+              doc=self.display_name, reason=comment))
         self._on_reject()
         return True
 
@@ -203,6 +269,7 @@ class ApprovalMixin(models.AbstractModel):
             rec.state = 'cancelled'
             rec._log_approval('cancel', from_state=from_state,
                               to_state='cancelled')
+            rec._clear_approval_activities()
             rec._on_cancel()
         return True
 

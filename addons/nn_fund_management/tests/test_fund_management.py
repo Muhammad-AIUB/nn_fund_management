@@ -19,6 +19,10 @@ class TestFundManagementCommon(TransactionCase):
             return cls.env['res.users'].create({
                 'name': login,
                 'login': login,
+                'email': '%s@example.com' % login,
+                # Inbox notifications so the bonus activity/notification paths
+                # run without needing an outgoing mail server.
+                'notification_type': 'inbox',
                 'groups_id': [(6, 0, [cls.env.ref(group_xmlid).id])],
                 'company_ids': [(6, 0, [cls.company.id])],
                 'company_id': cls.company.id,

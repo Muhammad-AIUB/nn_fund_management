@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
+
+_logger = logging.getLogger(__name__)
 
 
 class Bill(models.Model):
@@ -130,7 +134,31 @@ class Bill(models.Model):
                     amt=rec.amount, rem=req.remaining_billable))
             rec.state = 'posted'
             rec._log_history('post', 'draft', 'posted')
+            rec._notify_requisition_usage()
         return True
+
+    def _notify_requisition_usage(self):
+        """Warn on the requisition when it is almost (>=90%) or fully used.
+        Best-effort: never let a notification block posting a bill."""
+        self.ensure_one()
+        req = self.requisition_id
+        if not req.amount:
+            return
+        used_ratio = (req.amount - req.remaining_billable) / req.amount
+        try:
+            if req.remaining_billable <= 0:
+                req.message_post(body=_(
+                    "Requisition %s is now fully billed.", req.display_name),
+                    subtype_xmlid='mail.mt_note')
+            elif used_ratio >= 0.9:
+                req.message_post(body=_(
+                    "Requisition %(doc)s is almost fully used "
+                    "(remaining billable: %(rem)s).",
+                    doc=req.display_name, rem=req.remaining_billable),
+                    subtype_xmlid='mail.mt_note')
+        except Exception:  # noqa: BLE001 - notifications are best-effort
+            _logger.warning("Could not post usage notice on %s",
+                            req.display_name)
 
     def action_cancel(self):
         for rec in self:
