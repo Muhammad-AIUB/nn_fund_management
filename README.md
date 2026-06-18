@@ -113,8 +113,9 @@ docker compose up -d
 
 ## Testing instructions
 
-The module ships **28 automated tests** (unit/integration) covering balance
-maths, double-spend prevention, approval rules and all server-side blocks.
+The module ships **44 automated tests** (unit/integration) covering balance
+maths, double-spend prevention, approval rules, all server-side blocks, and
+edge cases (editing/deleting locked records, missing approval rule, etc.).
 
 Run them on a throwaway database:
 
@@ -123,7 +124,7 @@ docker compose run --rm odoo odoo -d test_nn -i nn_fund_management \
   --test-enable --test-tags /nn_fund_management --stop-after-init
 ```
 
-Expected result: `0 failed, 0 error(s) of 28 tests`.
+Expected result: `0 failed, 0 error(s) of 44 tests`.
 
 > On Git Bash / MSYS, prefix the command with `MSYS_NO_PATHCONV=1` so the
 > `/nn_fund_management` test tag isn't rewritten into a Windows path.

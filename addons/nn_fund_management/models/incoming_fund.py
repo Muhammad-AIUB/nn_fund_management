@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import _, api, fields, models
-from odoo.exceptions import AccessError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 
 class IncomingFund(models.Model):
@@ -93,3 +93,23 @@ class IncomingFund(models.Model):
         for rec in self:
             if rec.state == 'cancelled':
                 rec.state = 'draft'
+
+    _LOCKED_WHEN_CONFIRMED = {
+        'amount', 'fund_account_id', 'transaction_reference', 'date'}
+
+    def write(self, vals):
+        if self._LOCKED_WHEN_CONFIRMED.intersection(vals):
+            for rec in self:
+                if rec.state == 'confirmed':
+                    raise UserError(_(
+                        "You cannot edit a confirmed incoming fund. Cancel it "
+                        "first."))
+        return super().write(vals)
+
+    @api.ondelete(at_uninstall=False)
+    def _prevent_delete_confirmed(self):
+        for rec in self:
+            if rec.state == 'confirmed':
+                raise UserError(_(
+                    "You cannot delete a confirmed incoming fund. Cancel it "
+                    "first."))

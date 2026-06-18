@@ -316,6 +316,101 @@ class TestBill(TestFundManagementCommon):
         self.assertEqual(req.remaining_billable, 150000)
         self.assertEqual(self.project_a.total_spent, 0)
 
+    def test_cannot_edit_posted_bill(self):
+        req = self._setup_requisition()
+        bill = self.env['nn.bill'].with_user(self.user_fund).create({
+            'requisition_id': req.id, 'amount': 100000,
+            'target_type': 'project', 'project_id': self.project_a.id})
+        bill.action_post()
+        with self.assertRaises(UserError):
+            bill.write({'amount': 1})
+
+    def test_bill_against_non_approved_requisition_blocked(self):
+        self._receive(1000000)
+        self._allocate(600000)
+        req = self.env['nn.fund.requisition'].with_user(self.user_fund).create({
+            'target_type': 'project', 'project_id': self.project_a.id,
+            'amount': 100000})  # left in draft, never approved
+        bill = self.env['nn.bill'].with_user(self.user_fund).create({
+            'requisition_id': req.id, 'amount': 1000,
+            'target_type': 'project', 'project_id': self.project_a.id})
+        with self.assertRaises(UserError):
+            bill.action_post()
+
+
+class TestErrorHandling(TestFundManagementCommon):
+    """Server-side guards and edge cases."""
+
+    def test_cannot_edit_amount_after_submit(self):
+        self._receive(1000000)
+        alloc = self._allocate(100000, approve=False)  # submitted
+        with self.assertRaises(UserError):
+            alloc.write({'amount': 200000})
+
+    def test_reset_to_draft_then_edit_allowed(self):
+        self._receive(1000000)
+        alloc = self._allocate(100000, approve=False)
+        alloc.with_user(self.user_gm).reject('not now')
+        alloc.action_reset_to_draft()
+        alloc.write({'amount': 50000})  # editable again in draft
+        self.assertEqual(alloc.amount, 50000)
+
+    def test_submit_twice_blocked(self):
+        self._receive(1000000)
+        alloc = self._allocate(100000, approve=False)
+        with self.assertRaises(UserError):
+            alloc.action_submit()
+
+    def test_reject_requires_comment(self):
+        self._receive(1000000)
+        alloc = self._allocate(100000, approve=False)
+        with self.assertRaises(UserError):
+            alloc.with_user(self.user_gm).reject('')
+
+    def test_cancel_approved_requires_admin(self):
+        self._receive(1000000)
+        alloc = self._allocate(100000)  # approved
+        with self.assertRaises(AccessError):
+            alloc.with_user(self.user_fund).action_cancel()
+        alloc.with_user(self.user_admin).action_cancel()
+        self.assertEqual(alloc.state, 'cancelled')
+        # Money returned to the account after cancelling the approved request.
+        self.assertEqual(self.account.assigned_amount, 0)
+        self.assertEqual(self.account.available_balance, 1000000)
+
+    def test_cannot_edit_confirmed_incoming_fund(self):
+        inf = self._receive(100, ref='LOCK-1')
+        with self.assertRaises(UserError):
+            inf.write({'amount': 999})
+
+    def test_cannot_delete_confirmed_incoming_fund(self):
+        inf = self._receive(100, ref='LOCK-2')
+        with self.assertRaises(UserError):
+            inf.unlink()
+
+    def test_cannot_delete_submitted_allocation(self):
+        self._receive(1000000)
+        alloc = self._allocate(100000, approve=False)
+        with self.assertRaises(UserError):
+            alloc.unlink()
+
+    def test_close_only_from_approved(self):
+        req = self.env['nn.fund.requisition'].with_user(self.user_fund).create({
+            'target_type': 'project', 'project_id': self.project_a.id,
+            'amount': 100})  # draft
+        with self.assertRaises(UserError):
+            req.action_close()
+
+    def test_submit_without_any_rule_is_blocked(self):
+        # Deactivate every rule, then submitting must fail with a clear error.
+        self.env['nn.approval.rule'].search([]).write({'active': False})
+        self._receive(1000000)
+        alloc = self.env['nn.fund.allocation'].with_user(self.user_fund).create({
+            'fund_account_id': self.account.id, 'target_type': 'project',
+            'project_id': self.project_a.id, 'amount': 1000})
+        with self.assertRaises(UserError):
+            alloc.action_submit()
+
 
 class TestChat(TestFundManagementCommon):
 

@@ -182,6 +182,19 @@ class Bill(models.Model):
             rec.state = 'draft'
         return True
 
+    _LOCKED_AFTER_DRAFT = {
+        'amount', 'requisition_id', 'target_type', 'project_id',
+        'expense_head_id', 'bill_date'}
+
+    def write(self, vals):
+        if self._LOCKED_AFTER_DRAFT.intersection(vals):
+            for rec in self:
+                if rec.state != 'draft':
+                    raise UserError(_(
+                        "You cannot change a %(state)s bill. Reset it to draft "
+                        "first.", state=rec.state))
+        return super().write(vals)
+
     @api.ondelete(at_uninstall=False)
     def _prevent_delete_posted(self):
         for rec in self:

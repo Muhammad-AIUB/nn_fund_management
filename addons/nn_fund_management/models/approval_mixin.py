@@ -374,8 +374,27 @@ class ApprovalMixin(models.AbstractModel):
         return self._open_decision_wizard('reject')
 
     # ------------------------------------------------------------------
-    # Protect confirmed documents from deletion
+    # Protect submitted/approved documents from edits & deletion
     # ------------------------------------------------------------------
+    def _locked_after_draft_fields(self):
+        """Financial fields that must not change once the request leaves draft.
+        Overridden by concrete models."""
+        return set()
+
+    def write(self, vals):
+        locked = self._locked_after_draft_fields()
+        changed = locked.intersection(vals)
+        if changed:
+            for rec in self:
+                if rec.state != 'draft':
+                    raise UserError(_(
+                        "You cannot change %(fields)s once the request has been "
+                        "submitted (status: %(state)s). Reset it to draft "
+                        "first.",
+                        fields=', '.join(sorted(changed)),
+                        state=rec.state))
+        return super().write(vals)
+
     @api.ondelete(at_uninstall=False)
     def _prevent_delete_active_documents(self):
         for rec in self:

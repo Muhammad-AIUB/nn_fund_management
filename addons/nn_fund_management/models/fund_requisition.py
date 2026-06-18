@@ -123,6 +123,9 @@ class FundRequisition(models.Model):
         else:
             self.project_id = False
 
+    def _locked_after_draft_fields(self):
+        return {'amount', 'target_type', 'project_id', 'expense_head_id'}
+
     # ------------------------------------------------------------------
     # Approval hooks
     # ------------------------------------------------------------------

@@ -137,6 +137,11 @@ class FundTransfer(models.Model):
                 raise ValidationError(_(
                     "The source and destination cannot be the same."))
 
+    def _locked_after_draft_fields(self):
+        return {'amount', 'source_type', 'source_project_id',
+                'source_expense_id', 'dest_type', 'dest_project_id',
+                'dest_expense_id'}
+
     # ------------------------------------------------------------------
     # Approval hooks
     # ------------------------------------------------------------------
