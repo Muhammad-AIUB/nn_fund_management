@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_fund_dashboard_form" model="ir.ui.view">
+        <field name="name">nn.fund.dashboard.form</field>
+        <field name="model">nn.fund.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="Fund Dashboard" create="false" edit="false">
+                <sheet>
+                    <field name="currency_id" invisible="1"/>
+                    <group string="Overview" col="6">
+                        <field name="total_received"/>
+                        <field name="unassigned_balance"/>
+                        <field name="held_amount"/>
+                        <field name="assigned_amount"/>
+                        <field name="spent_amount"/>
+                        <field name="pending_approval_count"/>
+                    </group>
+                    <notebook>
+                        <page string="Pending Approvals" name="pending">
+                            <separator string="Allocations"/>
+                            <field name="pending_allocation_ids" nolabel="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="fund_account_id"/>
+                                    <field name="project_id"/>
+                                    <field name="expense_head_id"/>
+                                    <field name="amount"/>
+                                    <field name="next_approver_group_id"/>
+                                </tree>
+                            </field>
+                            <separator string="Requisitions"/>
+                            <field name="pending_requisition_ids" nolabel="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="project_id"/>
+                                    <field name="expense_head_id"/>
+                                    <field name="amount"/>
+                                    <field name="next_approver_group_id"/>
+                                </tree>
+                            </field>
+                            <separator string="Transfers"/>
+                            <field name="pending_transfer_ids" nolabel="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="source_display"/>
+                                    <field name="dest_display"/>
+                                    <field name="amount"/>
+                                    <field name="next_approver_group_id"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Project Balances" name="projects">
+                            <field name="project_ids" nolabel="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="total_allocated"/>
+                                    <field name="requisition_hold"/>
+                                    <field name="approved_unspent"/>
+                                    <field name="total_spent"/>
+                                    <field name="available_fund"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Expense-Head Balances" name="expenses">
+                            <field name="expense_head_ids" nolabel="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="total_allocated"/>
+                                    <field name="requisition_hold"/>
+                                    <field name="approved_unspent"/>
+                                    <field name="total_spent"/>
+                                    <field name="available_fund"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Recent Movements" name="recent">
+                            <field name="recent_history_ids" nolabel="1">
+                                <tree>
+                                    <field name="action_date"/>
+                                    <field name="document_ref"/>
+                                    <field name="action"/>
+                                    <field name="user_id"/>
+                                    <field name="amount"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_fund_dashboard" model="ir.actions.server">
+        <field name="name">Dashboard</field>
+        <field name="model_id" ref="model_nn_fund_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_dashboard()</field>
+    </record>
+
+</odoo>

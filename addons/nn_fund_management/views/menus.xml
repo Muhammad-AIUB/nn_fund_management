@@ -7,6 +7,13 @@
               sequence="20"
               groups="group_fund_user"/>
 
+    <!-- Dashboard -->
+    <menuitem id="menu_fund_dashboard"
+              name="Dashboard"
+              parent="menu_fund_root"
+              action="action_fund_dashboard"
+              sequence="5"/>
+
     <!-- Operations -->
     <menuitem id="menu_fund_operations"
               name="Operations"

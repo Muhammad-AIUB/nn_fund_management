@@ -28,6 +28,7 @@
         'views/bill_views.xml',
         'views/fund_transfer_views.xml',
         'views/approval_history_views.xml',
+        'views/fund_dashboard_views.xml',
         'views/menus.xml',
         'views/res_config_settings_views.xml',
     ],

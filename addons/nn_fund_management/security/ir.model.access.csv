@@ -18,6 +18,7 @@ access_approval_rule_admin,approval.rule.admin,model_nn_approval_rule,group_fund
 access_approval_rule_step_user,approval.rule.step.user,model_nn_approval_rule_step,group_fund_user,1,0,0,0
 access_approval_rule_step_admin,approval.rule.step.admin,model_nn_approval_rule_step,group_fund_admin,1,1,1,1
 access_approval_wizard_user,approval.wizard.user,model_nn_approval_wizard,group_fund_user,1,1,1,1
+access_fund_dashboard_user,fund.dashboard.user,model_nn_fund_dashboard,group_fund_user,1,1,1,1
 access_fund_allocation_user,fund.allocation.user,model_nn_fund_allocation,group_fund_user,1,1,1,1
 access_fund_allocation_finance,fund.allocation.finance,model_nn_fund_allocation,group_finance_user,1,1,1,1
 access_fund_allocation_admin,fund.allocation.admin,model_nn_fund_allocation,group_fund_admin,1,1,1,1
