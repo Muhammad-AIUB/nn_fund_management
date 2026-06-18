@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from . import fund_target_mixin
+from . import chat_mixin
 from . import approval_history
 from . import approval_rule
 from . import approval_mixin

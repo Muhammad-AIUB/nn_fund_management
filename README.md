@@ -168,6 +168,14 @@ Enforcement is **server-side**, not just hidden buttons:
   message-id, detects duplicate references, and logs parse failures. No bank
   credentials are stored in the code.
 
+## Real-time discussion (chat)
+
+Every allocation, requisition and transfer has a **Discussion** button that
+opens a real-time chat for that request, built on Odoo's native **Discuss**
+(`discuss.channel`, websocket-backed). A private group channel is created on
+first use and the requester plus all approvers are added as members, so they
+can chat live about the request. See `models/chat_mixin.py`.
+
 ## Architecture
 
 See **[ARCHITECTURE.md](ARCHITECTURE.md)** for the model map, the balance

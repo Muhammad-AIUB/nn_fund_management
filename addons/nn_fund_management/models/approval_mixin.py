@@ -36,6 +36,7 @@ class ApprovalMixin(models.AbstractModel):
     """
     _name = 'nn.approval.mixin'
     _description = 'Approval Workflow Mixin'
+    _inherit = ['nn.chat.mixin']
 
     _REQUEST_TYPE_BY_MODEL = {
         'nn.fund.allocation': 'allocation',
@@ -79,6 +80,21 @@ class ApprovalMixin(models.AbstractModel):
     # ------------------------------------------------------------------
     def _get_request_type(self):
         return self._REQUEST_TYPE_BY_MODEL.get(self._name, 'any')
+
+    def _chat_member_partners(self):
+        """Discussion members = requester + everyone who can approve it."""
+        partners = super()._chat_member_partners()
+        groups = self.env['res.groups']
+        if self.approval_rule_id:
+            groups |= self.approval_rule_id.step_ids.mapped('group_id')
+        else:
+            for xmlid in ('nn_fund_management.group_gm_approver',
+                          'nn_fund_management.group_md_approver'):
+                grp = self.env.ref(xmlid, raise_if_not_found=False)
+                if grp:
+                    groups |= grp
+        partners |= groups.mapped('users.partner_id')
+        return partners
 
     def _resolve_approval_rule(self):
         """Return the most specific active rule (with steps) that matches."""

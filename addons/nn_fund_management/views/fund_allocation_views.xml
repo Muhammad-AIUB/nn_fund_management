@@ -44,6 +44,9 @@
                     <button name="action_reset_to_draft" type="object"
                             string="Reset to Draft"
                             invisible="state not in ('rejected','cancelled')"/>
+                    <button name="action_open_chat" type="object"
+                            string="Discussion" icon="fa-comments"
+                            class="btn-secondary"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,submitted,approved"/>
                 </header>

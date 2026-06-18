@@ -317,6 +317,34 @@ class TestBill(TestFundManagementCommon):
         self.assertEqual(self.project_a.total_spent, 0)
 
 
+class TestChat(TestFundManagementCommon):
+
+    def test_open_chat_creates_channel_with_members(self):
+        self._receive(1000000)
+        alloc = self.env['nn.fund.allocation'].with_user(self.user_fund).create({
+            'fund_account_id': self.account.id, 'target_type': 'project',
+            'project_id': self.project_a.id, 'amount': 100000})
+        action = alloc.with_user(self.user_fund).action_open_chat()
+        self.assertTrue(alloc.channel_id)
+        self.assertEqual(action['tag'], 'mail.action_discuss')
+        self.assertEqual(action['context']['active_id'], alloc.channel_id.id)
+        members = alloc.channel_id.channel_member_ids.mapped('partner_id')
+        # Requester and the GM/MD approvers are in the discussion.
+        self.assertIn(self.user_fund.partner_id, members)
+        self.assertIn(self.user_gm.partner_id, members)
+        self.assertIn(self.user_md.partner_id, members)
+
+    def test_open_chat_is_idempotent(self):
+        self._receive(1000000)
+        alloc = self.env['nn.fund.allocation'].create({
+            'fund_account_id': self.account.id, 'target_type': 'project',
+            'project_id': self.project_a.id, 'amount': 100000})
+        alloc.action_open_chat()
+        channel = alloc.channel_id
+        alloc.action_open_chat()
+        self.assertEqual(alloc.channel_id, channel)  # same channel reused
+
+
 class TestBankEmail(TestFundManagementCommon):
 
     SAMPLE = ("You have received BDT 1,000,000.00 in account XXXX1234 from "
