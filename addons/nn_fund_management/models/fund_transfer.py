@@ -165,7 +165,7 @@ class FundTransfer(models.Model):
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get('name', 'New') == 'New':
-                vals['name'] = self.env['ir.sequence'].next_by_code(
+                vals['name'] = self.env['ir.sequence'].sudo().next_by_code(
                     'nn.fund.transfer') or 'New'
         records = super().create(vals_list)
         for rec in records:

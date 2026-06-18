@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<!-- Group definitions are module-managed (no noupdate), so changes such as
+     implied groups are applied on upgrade. -->
+<odoo>
 
     <!-- Application category shown in user form / Settings -->
     <record id="module_category_fund_management" model="ir.module.category">
@@ -8,10 +10,14 @@
         <field name="sequence">20</field>
     </record>
 
-    <!-- Base role: create and read own/allowed requests -->
+    <!-- Base role: create and read own/allowed requests. Implies the base
+         Internal User group, since every fund user is an internal employee
+         (this also grants the basic access, e.g. to sequences, that all
+         operational users need). -->
     <record id="group_fund_user" model="res.groups">
         <field name="name">Fund User</field>
         <field name="category_id" ref="module_category_fund_management"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
     </record>
 
     <!-- Finance: confirm incoming funds, manage fund accounts -->
