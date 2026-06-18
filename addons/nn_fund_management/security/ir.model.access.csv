@@ -20,3 +20,6 @@ access_fund_allocation_admin,fund.allocation.admin,model_nn_fund_allocation,grou
 access_fund_requisition_user,fund.requisition.user,model_nn_fund_requisition,group_fund_user,1,1,1,1
 access_fund_requisition_finance,fund.requisition.finance,model_nn_fund_requisition,group_finance_user,1,1,1,1
 access_fund_requisition_admin,fund.requisition.admin,model_nn_fund_requisition,group_fund_admin,1,1,1,1
+access_bill_user,bill.user,model_nn_bill,group_fund_user,1,1,1,0
+access_bill_finance,bill.finance,model_nn_bill,group_finance_user,1,1,1,0
+access_bill_admin,bill.admin,model_nn_bill,group_fund_admin,1,1,1,1

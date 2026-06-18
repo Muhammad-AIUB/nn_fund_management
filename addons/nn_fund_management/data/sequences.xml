@@ -25,4 +25,12 @@
         <field name="company_id" eval="False"/>
     </record>
 
+    <record id="seq_bill" model="ir.sequence">
+        <field name="name">Bill</field>
+        <field name="code">nn.bill</field>
+        <field name="prefix">BILL/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
 </odoo>

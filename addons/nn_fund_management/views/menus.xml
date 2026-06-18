@@ -31,6 +31,12 @@
               action="action_fund_requisition"
               sequence="30"/>
 
+    <menuitem id="menu_bill"
+              name="Bills"
+              parent="menu_fund_operations"
+              action="action_bill"
+              sequence="40"/>
+
     <!-- Configuration -->
     <menuitem id="menu_fund_config"
               name="Configuration"

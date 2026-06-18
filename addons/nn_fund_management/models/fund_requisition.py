@@ -48,6 +48,7 @@ class FundRequisition(models.Model):
     target_available = fields.Monetary(
         string='Available at Source', compute='_compute_target_available')
 
+    bill_ids = fields.One2many('nn.bill', 'requisition_id', string='Bills')
     billed_amount = fields.Monetary(
         string='Billed Amount', compute='_compute_billing', store=True)
     remaining_billable = fields.Monetary(
@@ -76,12 +77,12 @@ class FundRequisition(models.Model):
             rec.target_available = target.available_fund if target else 0.0
 
     def _get_billed_amount(self):
-        """Total posted (non-reversed) bills against this requisition.
-        Returns 0 until the bill model is added; overridden there."""
+        """Total of posted (non-reversed) bills against this requisition."""
         self.ensure_one()
-        return 0.0
+        return sum(self.bill_ids.filtered(
+            lambda b: b.state == 'posted').mapped('amount'))
 
-    @api.depends('amount', 'state')
+    @api.depends('amount', 'state', 'bill_ids.amount', 'bill_ids.state')
     def _compute_billing(self):
         for rec in self:
             billed = rec._get_billed_amount()

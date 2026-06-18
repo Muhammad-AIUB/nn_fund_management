@@ -33,6 +33,8 @@ class ApprovalHistory(models.Model):
             ('cancel', 'Cancelled'),
             ('close', 'Closed'),
             ('reset', 'Reset to Draft'),
+            ('post', 'Bill Posted'),
+            ('reverse', 'Bill Reversed'),
         ], string='Action', required=True)
     approval_level = fields.Selection(
         selection=[('gm', 'General Manager'), ('md', 'Managing Director')],

@@ -27,6 +27,7 @@ class ExpenseHead(models.Model):
 
     @api.depends('allocation_ids.amount', 'allocation_ids.state',
                  'requisition_ids.amount', 'requisition_ids.state',
-                 'requisition_ids.remaining_billable')
+                 'requisition_ids.remaining_billable',
+                 'requisition_ids.billed_amount')
     def _compute_fund_balances(self):
         return super()._compute_fund_balances()

@@ -85,6 +85,8 @@ class FundTargetMixin(models.AbstractModel):
             c['requisition_hold'] = sum(pending_req.mapped('amount'))
             c['approved_unspent'] = sum(
                 approved_req.mapped('remaining_billable'))
+            # Spent = total posted-bill amount across the target's requisitions.
+            c['total_spent'] = sum(self.requisition_ids.mapped('billed_amount'))
 
         return c
 
