@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_bank_email_tree" model="ir.ui.view">
+        <field name="name">nn.bank.email.tree</field>
+        <field name="model">nn.bank.email</field>
+        <field name="arch" type="xml">
+            <tree string="Bank Emails">
+                <field name="received_date"/>
+                <field name="name"/>
+                <field name="bank_name"/>
+                <field name="transaction_reference"/>
+                <field name="amount"/>
+                <field name="incoming_fund_id"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'received'"
+                       decoration-success="state == 'parsed'"
+                       decoration-danger="state == 'failed'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_bank_email_form" model="ir.ui.view">
+        <field name="name">nn.bank.email.form</field>
+        <field name="model">nn.bank.email</field>
+        <field name="arch" type="xml">
+            <form string="Bank Email">
+                <header>
+                    <button name="action_parse" type="object"
+                            string="Parse" class="oe_highlight"
+                            invisible="state == 'parsed'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Failed" bg_color="text-bg-danger"
+                            invisible="state != 'failed'"/>
+                    <group>
+                        <group string="Email">
+                            <field name="name"/>
+                            <field name="email_from"/>
+                            <field name="message_id"/>
+                            <field name="received_date"/>
+                            <field name="fund_account_id"/>
+                        </group>
+                        <group string="Parsed Data">
+                            <field name="bank_name"/>
+                            <field name="bank_account"/>
+                            <field name="transaction_reference"/>
+                            <field name="transaction_date"/>
+                            <field name="amount"/>
+                            <field name="sender_info"/>
+                            <field name="incoming_fund_id"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Error Log" invisible="state != 'failed'">
+                        <field name="error_log" nolabel="1" readonly="1"/>
+                    </group>
+                    <group string="Email Body">
+                        <field name="raw_body" nolabel="1"
+                               placeholder="Paste the bank notification email body here, then click Parse..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_bank_email" model="ir.actions.act_window">
+        <field name="name">Bank Emails</field>
+        <field name="res_model">nn.bank.email</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No bank emails yet</p>
+            <p>Bank notification emails (via the mail alias, or pasted manually)
+               are parsed into incoming funds pending verification.</p>
+        </field>
+    </record>
+
+</odoo>

@@ -50,6 +50,13 @@
               action="action_fund_transfer"
               sequence="50"/>
 
+    <menuitem id="menu_bank_email"
+              name="Bank Emails"
+              parent="menu_fund_operations"
+              action="action_bank_email"
+              groups="group_finance_user"
+              sequence="60"/>
+
     <!-- Configuration -->
     <menuitem id="menu_fund_config"
               name="Configuration"

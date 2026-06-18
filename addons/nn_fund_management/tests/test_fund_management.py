@@ -317,6 +317,51 @@ class TestBill(TestFundManagementCommon):
         self.assertEqual(self.project_a.total_spent, 0)
 
 
+class TestBankEmail(TestFundManagementCommon):
+
+    SAMPLE = ("You have received BDT 1,000,000.00 in account XXXX1234 from "
+              "John Doe. TrxID: BNK999 on 2026-06-18. - ABC Bank")
+
+    def test_parse_creates_pending_incoming_fund(self):
+        be = self.env['nn.bank.email'].create({
+            'name': 'Credit Alert', 'raw_body': self.SAMPLE,
+            'message_id': '<msg-1@bank>'})
+        be.action_parse()
+        self.assertEqual(be.state, 'parsed')
+        self.assertEqual(be.amount, 1000000)
+        self.assertEqual(be.transaction_reference, 'BNK999')
+        self.assertTrue(be.incoming_fund_id)
+        self.assertEqual(be.incoming_fund_id.state, 'pending_verification')
+        self.assertEqual(be.incoming_fund_id.amount, 1000000)
+
+    def test_duplicate_reference_detected(self):
+        self.env['nn.incoming.fund'].create({
+            'fund_account_id': self.account.id, 'amount': 10,
+            'transaction_reference': 'BNK999'})
+        be = self.env['nn.bank.email'].create({
+            'name': 'Credit', 'raw_body': self.SAMPLE,
+            'message_id': '<msg-2@bank>'})
+        be.action_parse()
+        self.assertEqual(be.state, 'failed')
+        self.assertIn('Duplicate', be.error_log)
+
+    def test_failed_parse_is_logged(self):
+        be = self.env['nn.bank.email'].create({
+            'name': 'Spam', 'raw_body': 'no money mentioned here',
+            'message_id': '<msg-3@bank>'})
+        be.action_parse()
+        self.assertEqual(be.state, 'failed')
+        self.assertTrue(be.error_log)
+
+    def test_same_email_not_processed_twice(self):
+        self.env['nn.bank.email'].create({
+            'raw_body': 'x', 'message_id': '<dup@bank>'})
+        with self.assertRaises(Exception):
+            self.env['nn.bank.email'].create({
+                'raw_body': 'y', 'message_id': '<dup@bank>'})
+            self.env.flush_all()
+
+
 class TestTransfer(TestFundManagementCommon):
 
     def test_hold_then_approve_moves(self):

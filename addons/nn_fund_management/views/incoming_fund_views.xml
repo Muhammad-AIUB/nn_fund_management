@@ -30,7 +30,7 @@
                 <header>
                     <button name="action_confirm" type="object"
                             string="Confirm" class="oe_highlight"
-                            invisible="state != 'draft'"/>
+                            invisible="state not in ('draft','pending_verification')"/>
                     <button name="action_cancel" type="object"
                             string="Cancel"
                             invisible="state == 'cancelled'"/>
@@ -38,7 +38,7 @@
                             string="Reset to Draft"
                             invisible="state != 'cancelled'"/>
                     <field name="state" widget="statusbar"
-                           statusbar_visible="draft,confirmed"/>
+                           statusbar_visible="draft,pending_verification,confirmed"/>
                 </header>
                 <sheet>
                     <div class="oe_title">

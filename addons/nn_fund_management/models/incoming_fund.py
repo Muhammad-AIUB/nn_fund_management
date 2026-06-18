@@ -41,9 +41,12 @@ class IncomingFund(models.Model):
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
+            ('pending_verification', 'Pending Verification'),
             ('confirmed', 'Confirmed'),
             ('cancelled', 'Cancelled'),
         ], string='Status', default='draft', required=True, tracking=True)
+    source_email_id = fields.Many2one(
+        'nn.bank.email', string='Source Bank Email', readonly=True, copy=False)
 
     _sql_constraints = [
         ('unique_txn_ref_per_account',
@@ -76,9 +79,10 @@ class IncomingFund(models.Model):
     def action_confirm(self):
         self._ensure_finance_user()
         for rec in self:
-            if rec.state != 'draft':
+            if rec.state not in ('draft', 'pending_verification'):
                 raise ValidationError(_(
-                    "Only draft incoming funds can be confirmed."))
+                    "Only draft or pending-verification incoming funds can be "
+                    "confirmed."))
             rec.state = 'confirmed'
 
     def action_cancel(self):

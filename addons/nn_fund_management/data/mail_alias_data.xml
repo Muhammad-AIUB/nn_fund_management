@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- Mail alias so bank notification emails sent to
+         bank-funds@<catchall domain> are routed to nn.bank.email and parsed.
+         No credentials here; this only receives already-delivered mail. -->
+    <record id="bank_email_alias" model="mail.alias">
+        <field name="alias_name">bank-funds</field>
+        <field name="alias_model_id" ref="model_nn_bank_email"/>
+        <field name="alias_contact">everyone</field>
+    </record>
+
+</odoo>
