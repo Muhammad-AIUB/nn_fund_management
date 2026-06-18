@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_fund_config_settings" model="ir.ui.view">
+        <field name="name">nn.fund.config.settings</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app string="Fund Management" name="nn_fund_management"
+                     logo="/nn_fund_management/static/description/icon.png">
+                    <block title="Approvals" name="nn_approvals">
+                        <setting string="Allow Self-Approval"
+                                 help="Let an approver approve their own request. Off by default for segregation of duties.">
+                            <field name="nn_allow_self_approval"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_fund_config_settings" model="ir.actions.act_window">
+        <field name="name">Fund Management Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">inline</field>
+        <field name="context">{'module': 'nn_fund_management'}</field>
+    </record>
+
+    <menuitem id="menu_fund_settings"
+              name="Settings"
+              parent="menu_fund_config"
+              action="action_fund_config_settings"
+              groups="group_fund_admin"
+              sequence="99"/>
+
+</odoo>

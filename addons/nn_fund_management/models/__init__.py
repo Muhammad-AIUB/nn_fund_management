@@ -10,3 +10,4 @@ from . import fund_allocation
 from . import fund_requisition
 from . import bill
 from . import fund_transfer
+from . import res_config_settings

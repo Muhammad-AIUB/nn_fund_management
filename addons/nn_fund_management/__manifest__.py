@@ -4,23 +4,8 @@
     'version': '17.0.1.0.0',
     'summary': 'Manage incoming funds, allocations, requisitions, bills and '
                'transfers with GM/MD approval and strict balance control.',
-    'description': """
-NN Fund Management
-==================
-Custom module for NN Services & Engineering Ltd. to manage the full lifecycle
-of company funds:
-
-* Fund accounts and incoming funds
-* Project and expense-head allocations
-* Fund requisitions and bills
-* Transfers between projects / expense heads
-* GM and MD approval workflow
-* Available / held / assigned / spent balance tracking
-* Approval and audit history
-
-The system guarantees that the same money cannot be allocated, transferred or
-spent more than once.
-""",
+    'description': "Custom fund management module for NN Services & "
+                   "Engineering Ltd. See README.md for full documentation.",
     'author': 'Muhammad AIUB',
     'category': 'Accounting/Finance',
     'license': 'LGPL-3',
@@ -42,6 +27,7 @@ spent more than once.
         'views/fund_transfer_views.xml',
         'views/approval_history_views.xml',
         'views/menus.xml',
+        'views/res_config_settings_views.xml',
     ],
     'application': True,
     'installable': True,
