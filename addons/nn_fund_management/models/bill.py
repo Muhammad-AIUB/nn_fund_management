@@ -138,19 +138,22 @@ class Bill(models.Model):
         return True
 
     def _notify_requisition_usage(self):
-        """Warn on the requisition when it is almost (>=90%) or fully used.
+        """Warn on the requisition when it is almost or fully used. The
+        'almost' threshold is configurable in the module settings.
         Best-effort: never let a notification block posting a bill."""
         self.ensure_one()
         req = self.requisition_id
         if not req.amount:
             return
         used_ratio = (req.amount - req.remaining_billable) / req.amount
+        threshold = float(self.env['ir.config_parameter'].sudo().get_param(
+            'nn_fund_management.requisition_alert_threshold', 90.0)) / 100.0
         try:
             if req.remaining_billable <= 0:
                 req.message_post(body=_(
                     "Requisition %s is now fully billed.", req.display_name),
                     subtype_xmlid='mail.mt_note')
-            elif used_ratio >= 0.9:
+            elif used_ratio >= threshold:
                 req.message_post(body=_(
                     "Requisition %(doc)s is almost fully used "
                     "(remaining billable: %(rem)s).",

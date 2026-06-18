@@ -76,12 +76,23 @@ docker compose up -d
 1. **Assign roles.** *Settings → Users* — give each user one or more module
    groups (see [Security](#security--access-control)). Approvers are defined by
    group membership, **not** hardcoded, so you can add/remove approvers freely.
-2. **Self-approval policy.** *Fund Management → Configuration → Settings* —
-   toggle **Allow Self-Approval**. Off by default (segregation of duties); when
-   off, a user can never approve a request they created.
-3. **Create master data.** Under *Configuration*: create **Fund Accounts**,
+2. **Settings.** *Fund Management → Configuration → Settings* — everything that
+   could otherwise be a magic value is configurable here:
+   - **Allow Self-Approval** (off by default — segregation of duties),
+   - **Requisition Usage Alert (%)** — when the "almost fully used" notice fires,
+   - **Default Bank-Email Account** — fallback account for unmatched bank
+     emails (empty = flag them instead of guessing),
+   - **Dashboard Recent Movements** — how many rows the dashboard shows.
+3. **Approval rules.** *Configuration → Approval Rules* — define which approver
+   groups sign off, by request type / amount / company (default: GM then MD).
+4. **Create master data.** Under *Configuration*: create **Fund Accounts**,
    **Projects**, and **Expense Heads**. Five common expense heads (rent, salary,
    utilities, marketing, admin) are seeded on install.
+
+> **No hardcoding.** There are no hardcoded user or database IDs, amounts, or
+> currencies. Approvers come from configurable rules/groups, the currency is the
+> company currency, thresholds and the bank-import account are settings, and all
+> code references use Odoo external IDs (xmlids) resolved at runtime.
 
 ---
 

@@ -14,6 +14,22 @@
                                  help="Let an approver approve their own request. Off by default for segregation of duties.">
                             <field name="nn_allow_self_approval"/>
                         </setting>
+                        <setting string="Requisition Usage Alert"
+                                 help="Post an 'almost fully used' notice when a requisition reaches this percentage of its approved amount.">
+                            <field name="nn_requisition_alert_threshold"/> %
+                        </setting>
+                    </block>
+                    <block title="Bank Email Import" name="nn_bank_email">
+                        <setting string="Default Bank-Email Account"
+                                 help="Fund account used when a bank email's account number cannot be matched. Leave empty to flag unmatched emails instead of guessing.">
+                            <field name="nn_bank_default_account_id"/>
+                        </setting>
+                    </block>
+                    <block title="Dashboard" name="nn_dashboard">
+                        <setting string="Recent Movements"
+                                 help="How many recent movements the dashboard shows.">
+                            <field name="nn_dashboard_recent_limit"/>
+                        </setting>
                     </block>
                 </app>
             </xpath>

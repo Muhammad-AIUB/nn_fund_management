@@ -353,7 +353,8 @@ class TestBankEmail(TestFundManagementCommon):
     def test_parse_creates_pending_incoming_fund(self):
         be = self.env['nn.bank.email'].create({
             'name': 'Credit Alert', 'raw_body': self.SAMPLE,
-            'message_id': '<msg-1@bank>'})
+            'message_id': '<msg-1@bank>',
+            'fund_account_id': self.account.id})
         be.action_parse()
         self.assertEqual(be.state, 'parsed')
         self.assertEqual(be.amount, 1000000)
@@ -372,6 +373,23 @@ class TestBankEmail(TestFundManagementCommon):
         be.action_parse()
         self.assertEqual(be.state, 'failed')
         self.assertIn('Duplicate', be.error_log)
+
+    def test_account_matched_by_number(self):
+        self.account.account_number = '0099001234'  # ends with 1234
+        be = self.env['nn.bank.email'].create({
+            'name': 'Credit', 'raw_body': self.SAMPLE,
+            'message_id': '<msg-match@bank>'})
+        be.action_parse()
+        self.assertEqual(be.state, 'parsed')
+        self.assertEqual(be.incoming_fund_id.fund_account_id, self.account)
+
+    def test_unmatched_without_default_is_flagged(self):
+        be = self.env['nn.bank.email'].create({
+            'name': 'Credit', 'raw_body': self.SAMPLE,
+            'message_id': '<msg-nomatch@bank>'})
+        be.action_parse()  # no account number match, no default configured
+        self.assertEqual(be.state, 'failed')
+        self.assertFalse(be.incoming_fund_id)
 
     def test_failed_parse_is_logged(self):
         be = self.env['nn.bank.email'].create({

@@ -10,7 +10,7 @@
                 <field name="action_date"/>
                 <field name="document_ref"/>
                 <field name="action"/>
-                <field name="approval_level" optional="show"/>
+                <field name="step_label" optional="show"/>
                 <field name="from_state" optional="hide"/>
                 <field name="to_state" optional="show"/>
                 <field name="user_id"/>

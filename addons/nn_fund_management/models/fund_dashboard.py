@@ -60,7 +60,10 @@ class FundDashboard(models.TransientModel):
             [('state', '=', 'submitted')])
         trf = self.env['nn.fund.transfer'].search(
             [('state', '=', 'submitted')])
-        history = self.env['nn.approval.history'].search([], limit=20)
+        recent_limit = int(self.env['ir.config_parameter'].sudo().get_param(
+            'nn_fund_management.dashboard_recent_limit', 20))
+        history = self.env['nn.approval.history'].search(
+            [], limit=recent_limit)
         for rec in self:
             rec.project_ids = projects
             rec.expense_head_ids = expenses

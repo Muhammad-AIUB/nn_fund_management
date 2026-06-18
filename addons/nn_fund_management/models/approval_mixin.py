@@ -82,17 +82,11 @@ class ApprovalMixin(models.AbstractModel):
         return self._REQUEST_TYPE_BY_MODEL.get(self._name, 'any')
 
     def _chat_member_partners(self):
-        """Discussion members = requester + everyone who can approve it."""
+        """Discussion members = requester + everyone who can approve it,
+        taken from the applicable rule (resolved live while still in draft)."""
         partners = super()._chat_member_partners()
-        groups = self.env['res.groups']
-        if self.approval_rule_id:
-            groups |= self.approval_rule_id.step_ids.mapped('group_id')
-        else:
-            for xmlid in ('nn_fund_management.group_gm_approver',
-                          'nn_fund_management.group_md_approver'):
-                grp = self.env.ref(xmlid, raise_if_not_found=False)
-                if grp:
-                    groups |= grp
+        rule = self.approval_rule_id or self._resolve_approval_rule()
+        groups = rule.step_ids.mapped('group_id')
         partners |= groups.mapped('users.partner_id')
         return partners
 
@@ -180,18 +174,6 @@ class ApprovalMixin(models.AbstractModel):
     # ------------------------------------------------------------------
     # Permission helpers
     # ------------------------------------------------------------------
-    def _level_code(self, group):
-        """Map a group back to gm/md for the history (cosmetic)."""
-        gm = self.env.ref('nn_fund_management.group_gm_approver',
-                          raise_if_not_found=False)
-        md = self.env.ref('nn_fund_management.group_md_approver',
-                          raise_if_not_found=False)
-        if group == gm:
-            return 'gm'
-        if group == md:
-            return 'md'
-        return False
-
     def _check_step_approver(self, step):
         if step.group_id not in self.env.user.groups_id:
             raise AccessError(_(
@@ -302,8 +284,7 @@ class ApprovalMixin(models.AbstractModel):
         self.approval_step += 1
         is_final = self.approval_step >= len(self._ordered_steps())
         self._log_approval(
-            'approve', approval_level=self._level_code(step.group_id),
-            from_state='submitted',
+            'approve', from_state='submitted',
             to_state='approved' if is_final else 'submitted',
             comment=comment, step_label=step.name)
 
@@ -330,8 +311,7 @@ class ApprovalMixin(models.AbstractModel):
         self._check_not_self_approval()
         self.state = 'rejected'
         self._log_approval(
-            'reject', approval_level=self._level_code(step.group_id) if step
-            else False, from_state='submitted', to_state='rejected',
+            'reject', from_state='submitted', to_state='rejected',
             comment=comment, step_label=step.name if step else False)
         self._clear_approval_activities()
         self._notify_requester(

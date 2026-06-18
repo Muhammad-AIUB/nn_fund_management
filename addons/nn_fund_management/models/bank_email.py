@@ -124,6 +124,11 @@ class BankEmail(models.Model):
             [('transaction_reference', '=', reference)]))
 
     def _find_fund_account(self, data):
+        """Resolve the target account without guessing:
+        1. match the parsed account number, else
+        2. the account chosen on this email, else
+        3. the configured default bank-email account.
+        Returns an empty recordset if none apply (caller flags the email)."""
         Account = self.env['nn.fund.account']
         acc_str = (data.get('bank_account') or '')
         digits = ''.join(ch for ch in acc_str if ch.isdigit())[-4:]
@@ -134,7 +139,11 @@ class BankEmail(models.Model):
                 return acc
         if self.fund_account_id:
             return self.fund_account_id
-        return Account.search([], limit=1)
+        default_id = self.env['ir.config_parameter'].sudo().get_param(
+            'nn_fund_management.bank_default_account_id')
+        if default_id:
+            return Account.browse(int(default_id)).exists()
+        return Account
 
     def action_parse(self):
         for rec in self:
@@ -155,8 +164,9 @@ class BankEmail(models.Model):
                 account = rec._find_fund_account(data)
                 if not account:
                     raise UserError(_(
-                        "No fund account available to book the incoming fund. "
-                        "Create a fund account first."))
+                        "Could not match a fund account for this email. Set "
+                        "the account number on the email, or configure a "
+                        "default bank-email account in the module settings."))
                 fund = self.env['nn.incoming.fund'].create({
                     'fund_account_id': account.id,
                     'amount': data['amount'],

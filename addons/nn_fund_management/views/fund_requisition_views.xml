@@ -109,7 +109,7 @@
                                 <tree>
                                     <field name="action_date"/>
                                     <field name="action"/>
-                                    <field name="approval_level"/>
+                                    <field name="step_label"/>
                                     <field name="from_state"/>
                                     <field name="to_state"/>
                                     <field name="user_id"/>
