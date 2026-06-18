@@ -32,4 +32,16 @@
               action="action_fund_account"
               sequence="10"/>
 
+    <menuitem id="menu_project"
+              name="Projects"
+              parent="menu_fund_config"
+              action="action_project"
+              sequence="20"/>
+
+    <menuitem id="menu_expense_head"
+              name="Expense Heads"
+              parent="menu_fund_config"
+              action="action_expense_head"
+              sequence="30"/>
+
 </odoo>

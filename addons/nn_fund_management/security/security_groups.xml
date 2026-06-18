@@ -44,4 +44,10 @@
                                           (4, ref('group_md_approver'))]"/>
     </record>
 
+    <!-- Give the default admin user full access so the app is usable
+         immediately after installation. -->
+    <record id="base.user_admin" model="res.users">
+        <field name="groups_id" eval="[(4, ref('group_fund_admin'))]"/>
+    </record>
+
 </odoo>

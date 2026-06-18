@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_project_tree" model="ir.ui.view">
+        <field name="name">nn.project.tree</field>
+        <field name="model">nn.project</field>
+        <field name="arch" type="xml">
+            <tree string="Projects">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="manager_id"/>
+                <field name="total_allocated" sum="Allocated"/>
+                <field name="requisition_hold" sum="Req. Hold"/>
+                <field name="transfer_hold" sum="Transfer Hold"/>
+                <field name="total_spent" sum="Spent"/>
+                <field name="available_fund" sum="Available"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'open'"
+                       decoration-muted="state == 'closed'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_project_form" model="ir.ui.view">
+        <field name="name">nn.project.form</field>
+        <field name="model">nn.project</field>
+        <field name="arch" type="xml">
+            <form string="Project">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Project name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="manager_id"/>
+                            <field name="partner_id"/>
+                            <field name="state"/>
+                        </group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="company_id"
+                                   groups="base.group_multi_company"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Balances">
+                        <group>
+                            <field name="total_allocated"/>
+                            <field name="incoming_transfer"/>
+                            <field name="outgoing_transfer"/>
+                            <field name="total_spent"/>
+                        </group>
+                        <group>
+                            <field name="requisition_hold"/>
+                            <field name="transfer_hold"/>
+                            <field name="approved_unspent"/>
+                            <field name="available_fund"/>
+                        </group>
+                    </group>
+                    <group string="Description">
+                        <field name="description" nolabel="1"/>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_project" model="ir.actions.act_window">
+        <field name="name">Projects</field>
+        <field name="res_model">nn.project</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+</odoo>
