@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- Multi-company record rules: a user can only see records of the
+         companies they are allowed into. These are global rules (apply to
+         every user) and complement the group ACLs and the server-side
+         permission checks in the approval workflow. -->
+
+    <record id="rule_fund_account_company" model="ir.rule">
+        <field name="name">Fund Account: multi-company</field>
+        <field name="model_id" ref="model_nn_fund_account"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+
+    <record id="rule_incoming_fund_company" model="ir.rule">
+        <field name="name">Incoming Fund: multi-company</field>
+        <field name="model_id" ref="model_nn_incoming_fund"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+
+    <record id="rule_project_company" model="ir.rule">
+        <field name="name">Project: multi-company</field>
+        <field name="model_id" ref="model_nn_project"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+
+    <record id="rule_expense_head_company" model="ir.rule">
+        <field name="name">Expense Head: multi-company</field>
+        <field name="model_id" ref="model_nn_expense_head"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+
+    <record id="rule_fund_allocation_company" model="ir.rule">
+        <field name="name">Fund Allocation: multi-company</field>
+        <field name="model_id" ref="model_nn_fund_allocation"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+
+    <record id="rule_fund_requisition_company" model="ir.rule">
+        <field name="name">Fund Requisition: multi-company</field>
+        <field name="model_id" ref="model_nn_fund_requisition"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+
+    <record id="rule_bill_company" model="ir.rule">
+        <field name="name">Bill: multi-company</field>
+        <field name="model_id" ref="model_nn_bill"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+
+    <record id="rule_fund_transfer_company" model="ir.rule">
+        <field name="name">Fund Transfer: multi-company</field>
+        <field name="model_id" ref="model_nn_fund_transfer"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+
+</odoo>

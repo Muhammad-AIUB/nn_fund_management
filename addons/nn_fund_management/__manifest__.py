@@ -28,6 +28,7 @@ spent more than once.
     'data': [
         'security/security_groups.xml',
         'security/ir.model.access.csv',
+        'security/record_rules.xml',
         'data/sequences.xml',
         'data/expense_head_data.xml',
         'wizard/approval_wizard_views.xml',
