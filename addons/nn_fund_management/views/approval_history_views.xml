@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_history_tree" model="ir.ui.view">
+        <field name="name">nn.approval.history.tree</field>
+        <field name="model">nn.approval.history</field>
+        <field name="arch" type="xml">
+            <tree string="Approval History" create="false" edit="false"
+                  delete="false">
+                <field name="action_date"/>
+                <field name="document_ref"/>
+                <field name="action"/>
+                <field name="approval_level" optional="show"/>
+                <field name="from_state" optional="hide"/>
+                <field name="to_state" optional="show"/>
+                <field name="user_id"/>
+                <field name="amount" optional="show"/>
+                <field name="project_id" optional="hide"/>
+                <field name="expense_head_id" optional="hide"/>
+                <field name="fund_account_id" optional="hide"/>
+                <field name="comment" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_approval_history_search" model="ir.ui.view">
+        <field name="name">nn.approval.history.search</field>
+        <field name="model">nn.approval.history</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="document_ref"/>
+                <field name="user_id"/>
+                <filter name="grp_action" string="Action"
+                        context="{'group_by': 'action'}"/>
+                <filter name="grp_user" string="Done By"
+                        context="{'group_by': 'user_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_approval_history" model="ir.actions.act_window">
+        <field name="name">Approval / Audit History</field>
+        <field name="res_model">nn.approval.history</field>
+        <field name="view_mode">tree</field>
+    </record>
+
+</odoo>

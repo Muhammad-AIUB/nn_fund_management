@@ -44,4 +44,16 @@
               action="action_expense_head"
               sequence="30"/>
 
+    <!-- Reporting / Audit -->
+    <menuitem id="menu_fund_reporting"
+              name="Reporting"
+              parent="menu_fund_root"
+              sequence="80"/>
+
+    <menuitem id="menu_approval_history"
+              name="Approval / Audit History"
+              parent="menu_fund_reporting"
+              action="action_approval_history"
+              sequence="10"/>
+
 </odoo>

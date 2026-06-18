@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_wizard_form" model="ir.ui.view">
+        <field name="name">nn.approval.wizard.form</field>
+        <field name="model">nn.approval.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Decision">
+                <field name="mode" invisible="1"/>
+                <group>
+                    <field name="comment"
+                           placeholder="Optional comment for approval, required for rejection..."
+                           required="mode == 'reject'"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object"
+                            string="Confirm" class="oe_highlight"/>
+                    <button string="Discard" class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>
