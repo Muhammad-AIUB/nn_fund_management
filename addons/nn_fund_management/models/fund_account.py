@@ -57,7 +57,7 @@ class FundAccount(models.Model):
 
     # States in which an allocation reserves money on the account but has not
     # yet been finalised into an assignment.
-    _ALLOCATION_HOLD_STATES = ('submitted', 'gm_approved')
+    _ALLOCATION_HOLD_STATES = ('submitted',)
 
     @api.depends('incoming_fund_ids.amount', 'incoming_fund_ids.state',
                  'allocation_ids.amount', 'allocation_ids.state')

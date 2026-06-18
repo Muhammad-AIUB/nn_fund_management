@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- Default policy: every request needs GM then MD approval, for any type
+         and any amount. Admins can add more specific (lower-sequence) rules,
+         e.g. amount thresholds, without touching code. -->
+    <record id="approval_rule_default" model="nn.approval.rule">
+        <field name="name">Default Approval (GM then MD)</field>
+        <field name="request_type">any</field>
+        <field name="sequence">100</field>
+        <field name="amount_min">0</field>
+        <field name="amount_max">0</field>
+    </record>
+
+    <record id="approval_rule_default_step_gm" model="nn.approval.rule.step">
+        <field name="rule_id" ref="approval_rule_default"/>
+        <field name="sequence">10</field>
+        <field name="name">General Manager</field>
+        <field name="group_id" ref="group_gm_approver"/>
+    </record>
+
+    <record id="approval_rule_default_step_md" model="nn.approval.rule.step">
+        <field name="rule_id" ref="approval_rule_default"/>
+        <field name="sequence">20</field>
+        <field name="name">Managing Director</field>
+        <field name="group_id" ref="group_md_approver"/>
+    </record>
+
+</odoo>

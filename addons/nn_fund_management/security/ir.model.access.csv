@@ -13,6 +13,10 @@ access_expense_head_finance,expense.head.finance,model_nn_expense_head,group_fin
 access_expense_head_admin,expense.head.admin,model_nn_expense_head,group_fund_admin,1,1,1,1
 access_approval_history_user,approval.history.user,model_nn_approval_history,group_fund_user,1,0,0,0
 access_approval_history_admin,approval.history.admin,model_nn_approval_history,group_fund_admin,1,1,1,1
+access_approval_rule_user,approval.rule.user,model_nn_approval_rule,group_fund_user,1,0,0,0
+access_approval_rule_admin,approval.rule.admin,model_nn_approval_rule,group_fund_admin,1,1,1,1
+access_approval_rule_step_user,approval.rule.step.user,model_nn_approval_rule_step,group_fund_user,1,0,0,0
+access_approval_rule_step_admin,approval.rule.step.admin,model_nn_approval_rule_step,group_fund_admin,1,1,1,1
 access_approval_wizard_user,approval.wizard.user,model_nn_approval_wizard,group_fund_user,1,1,1,1
 access_fund_allocation_user,fund.allocation.user,model_nn_fund_allocation,group_fund_user,1,1,1,1
 access_fund_allocation_finance,fund.allocation.finance,model_nn_fund_allocation,group_finance_user,1,1,1,1

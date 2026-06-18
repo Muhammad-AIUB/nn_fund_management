@@ -157,8 +157,58 @@ class TestApprovalRules(TestFundManagementCommon):
             'fund_account_id': self.account.id, 'target_type': 'project',
             'project_id': self.project_a.id, 'amount': 100000})
         alloc.action_submit()
+        alloc.with_user(self.user_gm).approve()  # first step (GM)
+        # Default rule has two steps, so after the GM step it is still pending.
+        self.assertEqual(alloc.state, 'submitted')
+        self.assertEqual(alloc.approval_step, 1)
+
+
+class TestConfigurableRules(TestFundManagementCommon):
+
+    def test_single_step_rule_approves_after_one_step(self):
+        """A more specific rule (GM only, small amounts) is picked over the
+        default and the request is fully approved after just the GM step."""
+        rule = self.env['nn.approval.rule'].create({
+            'name': 'Small (GM only)',
+            'request_type': 'allocation',
+            'sequence': 1,  # more specific than the default (100)
+            'amount_min': 0,
+            'amount_max': 50000,
+            'step_ids': [(0, 0, {
+                'name': 'General Manager', 'sequence': 10,
+                'group_id': self.env.ref(
+                    'nn_fund_management.group_gm_approver').id})],
+        })
+        self._receive(1000000)
+        alloc = self.env['nn.fund.allocation'].with_user(self.user_fund).create({
+            'fund_account_id': self.account.id, 'target_type': 'project',
+            'project_id': self.project_a.id, 'amount': 40000})
+        alloc.action_submit()
+        self.assertEqual(alloc.approval_rule_id, rule)
+        alloc.with_user(self.user_gm).approve()  # single step => approved
+        self.assertEqual(alloc.state, 'approved')
+        self.assertEqual(self.account.assigned_amount, 40000)
+
+    def test_large_amount_uses_default_two_step_rule(self):
+        self.env['nn.approval.rule'].create({
+            'name': 'Small (GM only)', 'request_type': 'allocation',
+            'sequence': 1, 'amount_min': 0, 'amount_max': 50000,
+            'step_ids': [(0, 0, {
+                'name': 'GM', 'sequence': 10,
+                'group_id': self.env.ref(
+                    'nn_fund_management.group_gm_approver').id})],
+        })
+        self._receive(1000000)
+        alloc = self.env['nn.fund.allocation'].with_user(self.user_fund).create({
+            'fund_account_id': self.account.id, 'target_type': 'project',
+            'project_id': self.project_a.id, 'amount': 300000})
+        alloc.action_submit()
+        # Above the small-rule ceiling, so it falls back to the default rule.
+        self.assertEqual(alloc.approval_rule_id.step_count, 2)
         alloc.with_user(self.user_gm).approve()
-        self.assertEqual(alloc.state, 'gm_approved')
+        self.assertEqual(alloc.state, 'submitted')  # still needs MD
+        alloc.with_user(self.user_md).approve()
+        self.assertEqual(alloc.state, 'approved')
 
     def test_repeated_approval_no_double_movement(self):
         self._receive(1000000)

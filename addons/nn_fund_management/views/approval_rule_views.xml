@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_rule_tree" model="ir.ui.view">
+        <field name="name">nn.approval.rule.tree</field>
+        <field name="model">nn.approval.rule</field>
+        <field name="arch" type="xml">
+            <tree string="Approval Rules">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="request_type"/>
+                <field name="amount_min"/>
+                <field name="amount_max"/>
+                <field name="step_count" string="Steps"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active" widget="boolean_toggle"/>
+                <field name="currency_id" column_invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_approval_rule_form" model="ir.ui.view">
+        <field name="name">nn.approval.rule.form</field>
+        <field name="model">nn.approval.rule</field>
+        <field name="arch" type="xml">
+            <form string="Approval Rule">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"
+                                   placeholder="e.g. Above 200,000 - GM, Finance, MD"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="request_type"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="amount_min"/>
+                            <field name="amount_max"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="company_id"
+                                   groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <field name="step_ids">
+                        <tree editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="group_id"/>
+                        </tree>
+                    </field>
+                    <p class="text-muted">
+                        Steps are processed top to bottom. A user in each step's
+                        group must approve before the next step becomes active.
+                    </p>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_approval_rule" model="ir.actions.act_window">
+        <field name="name">Approval Rules</field>
+        <field name="res_model">nn.approval.rule</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Define an approval rule</p>
+            <p>Configure which approver groups must sign off, by request type and amount.</p>
+        </field>
+    </record>
+
+</odoo>

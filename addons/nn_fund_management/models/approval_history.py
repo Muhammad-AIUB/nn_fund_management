@@ -27,6 +27,7 @@ class ApprovalHistory(models.Model):
         selection=[
             ('create', 'Created'),
             ('submit', 'Submitted'),
+            ('approve', 'Approved (step)'),
             ('gm_approve', 'GM Approved'),
             ('md_approve', 'MD Approved'),
             ('reject', 'Rejected'),
@@ -39,6 +40,7 @@ class ApprovalHistory(models.Model):
     approval_level = fields.Selection(
         selection=[('gm', 'General Manager'), ('md', 'Managing Director')],
         string='Approval Level')
+    step_label = fields.Char(string='Approval Step')
 
     user_id = fields.Many2one(
         'res.users', string='Done By', required=True,

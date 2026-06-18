@@ -68,6 +68,13 @@
               action="action_expense_head"
               sequence="30"/>
 
+    <menuitem id="menu_approval_rule"
+              name="Approval Rules"
+              parent="menu_fund_config"
+              action="action_approval_rule"
+              groups="group_fund_admin"
+              sequence="40"/>
+
     <!-- Reporting / Audit -->
     <menuitem id="menu_fund_reporting"
               name="Reporting"

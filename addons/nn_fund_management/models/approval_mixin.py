@@ -2,27 +2,32 @@
 import logging
 
 from odoo import _, api, fields, models
-from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.exceptions import AccessError, UserError
 
 _logger = logging.getLogger(__name__)
 
 
 class ApprovalMixin(models.AbstractModel):
-    """Reusable two-level (GM -> MD) approval workflow.
+    """Reusable, rule-driven multi-step approval workflow.
 
-    Allocations, requisitions and transfers all share the exact same approval
-    rules, so the workflow lives here once:
+    Allocations, requisitions and transfers share the same approval engine, so
+    it lives here once:
 
-    * State machine: draft -> submitted -> gm_approved -> approved,
-      plus rejected / cancelled (requisition adds 'closed').
-    * GM must approve before MD; MD cannot act first (enforced by the state).
-    * Only a user in the level's approver group may approve/reject at that level
-      (server side, not just hidden buttons).
-    * A user cannot approve their own request unless self-approval is explicitly
-      enabled via the ``nn_fund_management.allow_self_approval`` config option.
+    * State machine: draft -> submitted -> approved, plus rejected / cancelled
+      (requisition adds 'closed'). The document stays ``submitted`` while it
+      walks through the approval steps and only becomes ``approved`` after the
+      last step.
+    * The required steps come from a configurable :class:`nn.approval.rule`
+      (matched by request type, amount and company at submission time and then
+      frozen on the document). Each step is a security group, so approvers are
+      configurable and never hardcoded. The default rule reproduces GM -> MD.
+    * Only a member of the current step's group may approve/reject it (server
+      side, not just hidden buttons). Steps are processed strictly in order.
+    * A user cannot approve their own request unless self-approval is enabled
+      via the ``nn_fund_management.allow_self_approval`` config option.
     * Every transition writes an immutable audit-history row.
-    * Transitions are guarded by the current state, so clicking a button twice
-      can never create a duplicate fund movement.
+    * Transitions are guarded by the current state and step pointer, so clicking
+      a button twice can never create a duplicate fund movement.
 
     The actual money effect is realised by the balance compute methods, which
     read document state - never by direct balance writes - so it is inherently
@@ -30,13 +35,18 @@ class ApprovalMixin(models.AbstractModel):
     ``_on_*`` hooks below.
     """
     _name = 'nn.approval.mixin'
-    _description = 'Two-level Approval Mixin'
+    _description = 'Approval Workflow Mixin'
+
+    _REQUEST_TYPE_BY_MODEL = {
+        'nn.fund.allocation': 'allocation',
+        'nn.fund.requisition': 'requisition',
+        'nn.fund.transfer': 'transfer',
+    }
 
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
             ('submitted', 'Submitted'),
-            ('gm_approved', 'GM Approved'),
             ('approved', 'Approved'),
             ('rejected', 'Rejected'),
             ('cancelled', 'Cancelled'),
@@ -49,18 +59,69 @@ class ApprovalMixin(models.AbstractModel):
     request_date = fields.Date(
         string='Request Date', default=fields.Date.context_today, copy=False)
 
-    gm_user_id = fields.Many2one('res.users', string='GM Approver',
-                                 readonly=True, copy=False)
-    gm_date = fields.Datetime(string='GM Approval Date', readonly=True,
-                              copy=False)
-    md_user_id = fields.Many2one('res.users', string='MD Approver',
-                                 readonly=True, copy=False)
-    md_date = fields.Datetime(string='MD Approval Date', readonly=True,
-                              copy=False)
+    approval_rule_id = fields.Many2one(
+        'nn.approval.rule', string='Approval Rule', readonly=True, copy=False)
+    approval_step = fields.Integer(
+        string='Next Step Index', default=0, readonly=True, copy=False,
+        help="Index of the next approval step to be completed.")
+    next_approver_group_id = fields.Many2one(
+        'res.groups', string='Pending Approval From',
+        compute='_compute_approval_progress')
+    approval_progress = fields.Char(
+        string='Approval Progress', compute='_compute_approval_progress')
 
     approval_history_ids = fields.One2many(
         'nn.approval.history', compute='_compute_approval_history_ids',
         string='Approval History')
+
+    # ------------------------------------------------------------------
+    # Rule resolution & steps
+    # ------------------------------------------------------------------
+    def _get_request_type(self):
+        return self._REQUEST_TYPE_BY_MODEL.get(self._name, 'any')
+
+    def _resolve_approval_rule(self):
+        """Return the most specific active rule (with steps) that matches."""
+        self.ensure_one()
+        rtype = self._get_request_type()
+        amount = self.amount if 'amount' in self._fields else 0.0
+        company = (self.company_id if 'company_id' in self._fields
+                   else self.env.company)
+        rules = self.env['nn.approval.rule'].search(
+            [('active', '=', True)], order='sequence, amount_min, id')
+        for rule in rules:
+            if rule.step_ids and rule._matches(rtype, amount, company):
+                return rule
+        return self.env['nn.approval.rule']
+
+    def _ordered_steps(self):
+        self.ensure_one()
+        return self.approval_rule_id.step_ids.sorted(
+            lambda s: (s.sequence, s.id))
+
+    def _current_step(self):
+        self.ensure_one()
+        steps = self._ordered_steps()
+        if 0 <= self.approval_step < len(steps):
+            return steps[self.approval_step]
+        return self.env['nn.approval.rule.step']
+
+    @api.depends('state', 'approval_rule_id', 'approval_step')
+    def _compute_approval_progress(self):
+        for rec in self:
+            total = len(rec._ordered_steps()) if rec.approval_rule_id else 0
+            if rec.state == 'submitted':
+                step = rec._current_step()
+                rec.next_approver_group_id = step.group_id if step else False
+                rec.approval_progress = _(
+                    "%(done)s of %(total)s steps approved",
+                    done=rec.approval_step, total=total)
+            elif rec.state == 'approved':
+                rec.next_approver_group_id = False
+                rec.approval_progress = _("Fully approved")
+            else:
+                rec.next_approver_group_id = False
+                rec.approval_progress = ''
 
     # ------------------------------------------------------------------
     # History
@@ -80,8 +141,8 @@ class ApprovalMixin(models.AbstractModel):
         self.ensure_one()
         return {}
 
-    def _log_approval(self, action, approval_level=False,
-                      from_state=False, to_state=False, comment=False):
+    def _log_approval(self, action, approval_level=False, from_state=False,
+                      to_state=False, comment=False, step_label=False):
         self.ensure_one()
         vals = {
             'res_model': self._name,
@@ -89,6 +150,7 @@ class ApprovalMixin(models.AbstractModel):
             'document_ref': self.display_name,
             'action': action,
             'approval_level': approval_level,
+            'step_label': step_label,
             'from_state': from_state,
             'to_state': to_state,
             'comment': comment,
@@ -102,15 +164,23 @@ class ApprovalMixin(models.AbstractModel):
     # ------------------------------------------------------------------
     # Permission helpers
     # ------------------------------------------------------------------
-    def _approver_group(self, level):
-        return ('nn_fund_management.group_gm_approver' if level == 'gm'
-                else 'nn_fund_management.group_md_approver')
+    def _level_code(self, group):
+        """Map a group back to gm/md for the history (cosmetic)."""
+        gm = self.env.ref('nn_fund_management.group_gm_approver',
+                          raise_if_not_found=False)
+        md = self.env.ref('nn_fund_management.group_md_approver',
+                          raise_if_not_found=False)
+        if group == gm:
+            return 'gm'
+        if group == md:
+            return 'md'
+        return False
 
-    def _check_approver(self, level):
-        if not self.env.user.has_group(self._approver_group(level)):
+    def _check_step_approver(self, step):
+        if step.group_id not in self.env.user.groups_id:
             raise AccessError(_(
-                "Only a %s approver can take this action.",
-                'GM' if level == 'gm' else 'MD'))
+                "Only a member of '%s' can approve this step.",
+                step.group_id.full_name))
 
     def _check_not_self_approval(self):
         allow = self.env['ir.config_parameter'].sudo().get_param(
@@ -121,24 +191,13 @@ class ApprovalMixin(models.AbstractModel):
                 "enable self-approval in the module settings."))
 
     # ------------------------------------------------------------------
-    # Activities & notifications
+    # Activities & notifications (best-effort)
     # ------------------------------------------------------------------
-    def _schedule_approver_activities(self, level):
-        """Schedule a To-Do activity for every user who can approve at the
-        given level, so the request shows up in their activity inbox.
-
-        Notifications are best-effort: a mail misconfiguration must never block
-        the financial workflow, so failures are logged, not raised."""
+    def _schedule_activities_for_group(self, group):
         self.ensure_one()
-        if not hasattr(self, 'activity_schedule'):
+        if not hasattr(self, 'activity_schedule') or not group:
             return
-        group = self.env.ref(self._approver_group(level),
-                             raise_if_not_found=False)
-        if not group:
-            return
-        summary = _("%(level)s approval required: %(doc)s",
-                    level='GM' if level == 'gm' else 'MD',
-                    doc=self.display_name)
+        summary = _("Approval required: %s", self.display_name)
         for user in group.users:
             try:
                 self.activity_schedule(
@@ -149,16 +208,17 @@ class ApprovalMixin(models.AbstractModel):
                     "Could not schedule approval activity for %s on %s",
                     user.login, self.display_name)
 
+    def _schedule_step_activities(self):
+        step = self._current_step()
+        if step:
+            self._schedule_activities_for_group(step.group_id)
+
     def _clear_approval_activities(self):
         if hasattr(self, 'activity_unlink'):
             self.activity_unlink(['mail.mail_activity_data_todo'])
 
     def _notify_requester(self, body):
-        """Notify the requester via the document chatter (best-effort).
-
-        The requester is subscribed as a follower and a note is logged, so the
-        update appears on the document without depending on an outgoing mail
-        server."""
+        """Notify the requester via the document chatter (best-effort)."""
         self.ensure_one()
         if not hasattr(self, 'message_post'):
             return
@@ -198,58 +258,65 @@ class ApprovalMixin(models.AbstractModel):
             if rec.state != 'draft':
                 raise UserError(_("Only draft requests can be submitted."))
             rec._check_can_submit()
+            rule = rec._resolve_approval_rule()
+            if not rule:
+                raise UserError(_(
+                    "No approval rule is configured for this request. "
+                    "Please configure one under Fund Management > "
+                    "Configuration > Approval Rules."))
+            rec.approval_rule_id = rule
+            rec.approval_step = 0
             rec.state = 'submitted'
             rec._log_approval('submit', from_state='draft',
                               to_state='submitted')
-            rec._schedule_approver_activities('gm')
+            rec._schedule_step_activities()
             rec._on_submit()
         return True
 
     def approve(self, comment=False):
         self.ensure_one()
-        if self.state == 'submitted':
-            self._check_approver('gm')
-            self._check_not_self_approval()
-            self.write({
-                'state': 'gm_approved',
-                'gm_user_id': self.env.user.id,
-                'gm_date': fields.Datetime.now(),
-            })
-            self._log_approval('gm_approve', 'gm', 'submitted',
-                               'gm_approved', comment)
-            self._clear_approval_activities()
-            self._schedule_approver_activities('md')
-        elif self.state == 'gm_approved':
-            self._check_approver('md')
-            self._check_not_self_approval()
-            self.write({
-                'state': 'approved',
-                'md_user_id': self.env.user.id,
-                'md_date': fields.Datetime.now(),
-            })
-            self._log_approval('md_approve', 'md', 'gm_approved',
-                               'approved', comment)
-            self._clear_approval_activities()
+        if self.state != 'submitted':
+            raise UserError(_("This request is not awaiting approval."))
+        step = self._current_step()
+        if not step:
+            raise UserError(_("No approval step is configured."))
+        self._check_step_approver(step)
+        self._check_not_self_approval()
+
+        self.approval_step += 1
+        is_final = self.approval_step >= len(self._ordered_steps())
+        self._log_approval(
+            'approve', approval_level=self._level_code(step.group_id),
+            from_state='submitted',
+            to_state='approved' if is_final else 'submitted',
+            comment=comment, step_label=step.name)
+
+        self._clear_approval_activities()
+        if is_final:
+            self.state = 'approved'
             self._notify_requester(
                 _("Your request %s has been fully approved.",
                   self.display_name))
             self._on_final_approve()
         else:
-            raise UserError(_("This request is not awaiting approval."))
+            self._schedule_step_activities()
         return True
 
     def reject(self, comment=False):
         self.ensure_one()
-        if self.state not in ('submitted', 'gm_approved'):
+        if self.state != 'submitted':
             raise UserError(_("Only a pending request can be rejected."))
         if not comment:
             raise UserError(_("A reason is required to reject a request."))
-        level = 'gm' if self.state == 'submitted' else 'md'
-        self._check_approver(level)
+        step = self._current_step()
+        if step:
+            self._check_step_approver(step)
         self._check_not_self_approval()
-        from_state = self.state
         self.state = 'rejected'
-        self._log_approval('reject', level, from_state, 'rejected', comment)
+        self._log_approval(
+            'reject', approval_level=self._level_code(step.group_id) if step
+            else False, from_state='submitted', to_state='rejected',
+            comment=comment, step_label=step.name if step else False)
         self._clear_approval_activities()
         self._notify_requester(
             _("Your request %(doc)s was rejected. Reason: %(reason)s",
@@ -279,7 +346,11 @@ class ApprovalMixin(models.AbstractModel):
                 raise UserError(_(
                     "Only rejected or cancelled requests can be reset."))
             from_state = rec.state
-            rec.state = 'draft'
+            rec.write({
+                'state': 'draft',
+                'approval_rule_id': False,
+                'approval_step': 0,
+            })
             rec._log_approval('reset', from_state=from_state, to_state='draft')
         return True
 

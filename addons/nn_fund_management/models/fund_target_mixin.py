@@ -79,7 +79,7 @@ class FundTargetMixin(models.AbstractModel):
 
         if 'requisition_ids' in self._fields:
             pending_req = self.requisition_ids.filtered(
-                lambda r: r.state in ('submitted', 'gm_approved'))
+                lambda r: r.state == 'submitted')
             approved_req = self.requisition_ids.filtered(
                 lambda r: r.state == 'approved')
             c['requisition_hold'] = sum(pending_req.mapped('amount'))
@@ -90,7 +90,7 @@ class FundTargetMixin(models.AbstractModel):
 
         if 'transfer_out_ids' in self._fields:
             pending_out = self.transfer_out_ids.filtered(
-                lambda t: t.state in ('submitted', 'gm_approved'))
+                lambda t: t.state == 'submitted')
             approved_out = self.transfer_out_ids.filtered(
                 lambda t: t.state == 'approved')
             c['transfer_hold'] = sum(pending_out.mapped('amount'))
