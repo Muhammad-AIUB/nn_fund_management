@@ -25,6 +25,12 @@
               action="action_fund_allocation"
               sequence="20"/>
 
+    <menuitem id="menu_fund_requisition"
+              name="Fund Requisitions"
+              parent="menu_fund_operations"
+              action="action_fund_requisition"
+              sequence="30"/>
+
     <!-- Configuration -->
     <menuitem id="menu_fund_config"
               name="Configuration"

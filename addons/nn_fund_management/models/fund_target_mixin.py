@@ -55,12 +55,14 @@ class FundTargetMixin(models.AbstractModel):
     def _get_balance_components(self):
         """Return the raw amounts that make up the balances for one record.
 
-        Concrete models / later steps override or extend this to plug in their
-        own documents. Returning a dict keeps the compute method stable while
-        the contributing sources grow.
+        Projects and expense heads share the exact same contributing documents
+        (and use identical relation field names: ``allocation_ids``,
+        ``requisition_ids`` ...), so the maths lives here once. Each relation is
+        read only if it has been declared yet, which lets the module grow step
+        by step without breaking earlier steps.
         """
         self.ensure_one()
-        return {
+        c = {
             'total_allocated': 0.0,
             'incoming_transfer': 0.0,
             'outgoing_transfer': 0.0,
@@ -69,6 +71,22 @@ class FundTargetMixin(models.AbstractModel):
             'approved_unspent': 0.0,
             'total_spent': 0.0,
         }
+
+        if 'allocation_ids' in self._fields:
+            approved_alloc = self.allocation_ids.filtered(
+                lambda a: a.state == 'approved')
+            c['total_allocated'] = sum(approved_alloc.mapped('amount'))
+
+        if 'requisition_ids' in self._fields:
+            pending_req = self.requisition_ids.filtered(
+                lambda r: r.state in ('submitted', 'gm_approved'))
+            approved_req = self.requisition_ids.filtered(
+                lambda r: r.state == 'approved')
+            c['requisition_hold'] = sum(pending_req.mapped('amount'))
+            c['approved_unspent'] = sum(
+                approved_req.mapped('remaining_billable'))
+
+        return c
 
     def _compute_fund_balances(self):
         for rec in self:
@@ -86,5 +104,6 @@ class FundTargetMixin(models.AbstractModel):
                 - c['outgoing_transfer']
                 - c['requisition_hold']
                 - c['transfer_hold']
+                - c['approved_unspent']
                 - c['total_spent']
             )

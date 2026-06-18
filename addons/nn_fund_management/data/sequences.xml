@@ -17,4 +17,12 @@
         <field name="company_id" eval="False"/>
     </record>
 
+    <record id="seq_fund_requisition" model="ir.sequence">
+        <field name="name">Fund Requisition</field>
+        <field name="code">nn.fund.requisition</field>
+        <field name="prefix">REQ/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
 </odoo>
