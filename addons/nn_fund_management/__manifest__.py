@@ -34,6 +34,11 @@
         'views/menus.xml',
         'views/res_config_settings_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'nn_fund_management/static/src/scss/form_buttons.scss',
+        ],
+    },
     'application': True,
     'installable': True,
     'post_init_hook': 'post_init_hook',

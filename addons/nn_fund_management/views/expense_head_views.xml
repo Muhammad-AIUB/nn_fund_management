@@ -24,7 +24,7 @@
         <field name="arch" type="xml">
             <form string="Expense Head">
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
+                    <div class="oe_button_box" name="button_box" invisible="not id">
                         <button name="action_view_allocations" type="object"
                                 class="oe_stat_button" icon="fa-share-alt">
                             <field name="allocation_count" widget="statinfo"

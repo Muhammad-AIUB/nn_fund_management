@@ -1,0 +1,22 @@
+/*
+ * Odoo 17 shows the form Save / Discard controls as bare icons (a cloud and a
+ * back-arrow) in the breadcrumb, which users find unclear. Append a readable
+ * text label so the action is obvious.
+ */
+.o_form_button_save::after {
+    content: " Save";
+    margin-left: 4px;
+    font-weight: 500;
+}
+
+.o_form_button_cancel::after {
+    content: " Discard";
+    margin-left: 4px;
+}
+
+/* Keep the labelled buttons comfortably sized. */
+.o_form_button_save,
+.o_form_button_cancel {
+    padding-left: 8px;
+    padding-right: 10px;
+}

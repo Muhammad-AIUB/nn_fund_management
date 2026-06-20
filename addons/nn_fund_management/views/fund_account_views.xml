@@ -25,7 +25,7 @@
         <field name="arch" type="xml">
             <form string="Fund Account">
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
+                    <div class="oe_button_box" name="button_box" invisible="not id">
                         <button name="action_view_incoming_funds" type="object"
                                 class="oe_stat_button" icon="fa-download">
                             <field name="incoming_fund_count" widget="statinfo"

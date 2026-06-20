@@ -49,7 +49,7 @@
                            statusbar_visible="draft,submitted,approved"/>
                 </header>
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
+                    <div class="oe_button_box" name="button_box" invisible="not id">
                         <button name="action_view_bills" type="object"
                                 class="oe_stat_button" icon="fa-money">
                             <field name="bill_count" widget="statinfo"
