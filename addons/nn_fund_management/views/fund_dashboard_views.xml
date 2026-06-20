@@ -8,14 +8,45 @@
             <form string="Fund Dashboard" create="false" edit="false">
                 <sheet>
                     <field name="currency_id" invisible="1"/>
-                    <group string="Overview" col="6">
-                        <field name="total_received"/>
-                        <field name="unassigned_balance"/>
-                        <field name="held_amount"/>
-                        <field name="assigned_amount"/>
-                        <field name="spent_amount"/>
-                        <field name="pending_approval_count"/>
-                    </group>
+                    <h2 class="mb-3">Overview</h2>
+                    <div class="row g-2 g-md-3 nn_dashboard_kpis">
+                        <div class="col-6 col-md-4 col-xl-2">
+                            <div class="nn_kpi_card">
+                                <span class="nn_kpi_label">Total Received</span>
+                                <field name="total_received" class="nn_kpi_value"/>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-xl-2">
+                            <div class="nn_kpi_card">
+                                <span class="nn_kpi_label">Unassigned</span>
+                                <field name="unassigned_balance" class="nn_kpi_value"/>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-xl-2">
+                            <div class="nn_kpi_card">
+                                <span class="nn_kpi_label">On Hold</span>
+                                <field name="held_amount" class="nn_kpi_value"/>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-xl-2">
+                            <div class="nn_kpi_card">
+                                <span class="nn_kpi_label">Assigned</span>
+                                <field name="assigned_amount" class="nn_kpi_value"/>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-xl-2">
+                            <div class="nn_kpi_card">
+                                <span class="nn_kpi_label">Spent</span>
+                                <field name="spent_amount" class="nn_kpi_value"/>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-xl-2">
+                            <div class="nn_kpi_card">
+                                <span class="nn_kpi_label">Pending Approvals</span>
+                                <field name="pending_approval_count" class="nn_kpi_value"/>
+                            </div>
+                        </div>
+                    </div>
                     <notebook>
                         <page string="Pending Approvals" name="pending">
                             <separator string="Allocations"/>

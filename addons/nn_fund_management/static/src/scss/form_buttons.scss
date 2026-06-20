@@ -20,3 +20,49 @@
     padding-left: 8px;
     padding-right: 10px;
 }
+
+/*
+ * Responsive dashboard KPI cards. The Bootstrap grid in the view handles the
+ * column reflow (2 per row on phones, 3 on tablets, 6 on wide screens); this
+ * just styles the cards and keeps the value readable at every size.
+ */
+.nn_dashboard_kpis {
+    .nn_kpi_card {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        height: 100%;
+        padding: 12px 14px;
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: 8px;
+        background: var(--o-view-background-color, #fff);
+    }
+
+    .nn_kpi_label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: var(--text-muted, #6c757d);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .nn_kpi_value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        line-height: 1.2;
+        word-break: break-word;
+    }
+
+    @media (max-width: 767.98px) {
+        .nn_kpi_value { font-size: 1.05rem; }
+    }
+}
+
+/* On small screens let stat buttons wrap instead of overflowing. */
+@media (max-width: 575.98px) {
+    .o_form_view .oe_button_box {
+        flex-wrap: wrap;
+    }
+}
