@@ -445,6 +445,14 @@ class TestErrorHandling(TestFundManagementCommon):
         with self.assertRaises(UserError):
             alloc.unlink()
 
+    def test_cannot_manually_edit_target_balance(self):
+        with self.assertRaises(UserError):
+            self.project_a.write({'total_allocated': 999999})
+
+    def test_cannot_manually_edit_account_balance(self):
+        with self.assertRaises(UserError):
+            self.account.write({'available_balance': 999999})
+
     def test_close_only_from_approved(self):
         req = self.env['nn.fund.requisition'].with_user(self.user_fund).create({
             'target_type': 'project', 'project_id': self.project_a.id,

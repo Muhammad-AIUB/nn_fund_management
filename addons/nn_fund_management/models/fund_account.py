@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tools import float_compare
 
 
@@ -80,6 +80,18 @@ class FundAccount(models.Model):
                 - account.assigned_amount
                 - account.on_hold_amount
             )
+
+    _PROTECTED_BALANCE_FIELDS = (
+        'total_received', 'available_balance', 'on_hold_amount',
+        'assigned_amount')
+
+    def write(self, vals):
+        forbidden = set(self._PROTECTED_BALANCE_FIELDS).intersection(vals)
+        if forbidden:
+            raise UserError(_(
+                "Balance fields are calculated automatically and cannot be "
+                "edited manually: %s", ', '.join(sorted(forbidden))))
+        return super().write(vals)
 
     @api.constrains('available_balance')
     def _check_no_negative_balance(self):

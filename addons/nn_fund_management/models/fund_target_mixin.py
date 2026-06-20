@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tools import float_compare
 
 
@@ -124,6 +124,23 @@ class FundTargetMixin(models.AbstractModel):
                 - c['approved_unspent']
                 - c['total_spent']
             )
+
+    # The computed balance fields a user must never set by hand.
+    _PROTECTED_BALANCE_FIELDS = (
+        'total_allocated', 'incoming_transfer', 'outgoing_transfer',
+        'requisition_hold', 'transfer_hold', 'approved_unspent',
+        'total_spent', 'available_fund')
+
+    def write(self, vals):
+        # Block manual edits of computed balances at the ORM level (not just in
+        # the UI). The compute method stores values through the framework's
+        # internal flush path, which does not go through this public write().
+        forbidden = set(self._PROTECTED_BALANCE_FIELDS).intersection(vals)
+        if forbidden:
+            raise UserError(_(
+                "Balance fields are calculated automatically and cannot be "
+                "edited manually: %s", ', '.join(sorted(forbidden))))
+        return super().write(vals)
 
     @api.constrains('available_fund')
     def _check_no_negative_balance(self):
