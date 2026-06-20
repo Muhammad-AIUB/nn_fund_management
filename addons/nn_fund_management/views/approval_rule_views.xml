@@ -42,6 +42,8 @@
                             <field name="currency_id" column_invisible="1"/>
                             <field name="company_id"
                                    groups="base.group_multi_company"/>
+                            <field name="project_id"/>
+                            <field name="expense_head_id"/>
                         </group>
                     </group>
                     <field name="step_ids">
@@ -49,6 +51,7 @@
                             <field name="sequence" widget="handle"/>
                             <field name="name"/>
                             <field name="group_id"/>
+                            <field name="user_id"/>
                         </tree>
                     </field>
                     <p class="text-muted">

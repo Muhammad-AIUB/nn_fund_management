@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
+from odoo.tools import float_compare
 
 
 class FundTargetMixin(models.AbstractModel):
@@ -122,3 +124,17 @@ class FundTargetMixin(models.AbstractModel):
                 - c['approved_unspent']
                 - c['total_spent']
             )
+
+    @api.constrains('available_fund')
+    def _check_no_negative_balance(self):
+        """Safety net: balances must never go negative. The workflow already
+        blocks over-spending before it happens; this guarantees data integrity
+        even against an unforeseen path."""
+        for rec in self:
+            rounding = rec.currency_id.rounding or 0.01
+            if float_compare(rec.available_fund, 0.0,
+                             precision_rounding=rounding) < 0:
+                raise ValidationError(_(
+                    "This operation would make the available balance of "
+                    "'%(name)s' negative (%(val)s), which is not allowed.",
+                    name=rec.display_name, val=rec.available_fund))

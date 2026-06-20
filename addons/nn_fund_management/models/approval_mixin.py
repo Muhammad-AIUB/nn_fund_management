@@ -86,9 +86,20 @@ class ApprovalMixin(models.AbstractModel):
         taken from the applicable rule (resolved live while still in draft)."""
         partners = super()._chat_member_partners()
         rule = self.approval_rule_id or self._resolve_approval_rule()
-        groups = rule.step_ids.mapped('group_id')
-        partners |= groups.mapped('users.partner_id')
+        for step in rule.step_ids:
+            partners |= self._step_approver_users(step).mapped('partner_id')
         return partners
+
+    def _approval_match_context(self):
+        """Project / expense head used to match rules. Overridden by models
+        whose target is not a plain ``project_id`` / ``expense_head_id``."""
+        self.ensure_one()
+        return {
+            'project': (self.project_id if 'project_id' in self._fields
+                        else self.env['nn.project']),
+            'expense': (self.expense_head_id if 'expense_head_id' in self._fields
+                        else self.env['nn.expense.head']),
+        }
 
     def _resolve_approval_rule(self):
         """Return the most specific active rule (with steps) that matches."""
@@ -97,12 +108,19 @@ class ApprovalMixin(models.AbstractModel):
         amount = self.amount if 'amount' in self._fields else 0.0
         company = (self.company_id if 'company_id' in self._fields
                    else self.env.company)
+        ctx = self._approval_match_context()
         rules = self.env['nn.approval.rule'].search(
             [('active', '=', True)], order='sequence, amount_min, id')
         for rule in rules:
-            if rule.step_ids and rule._matches(rtype, amount, company):
+            if rule.step_ids and rule._matches(
+                    rtype, amount, company,
+                    ctx.get('project'), ctx.get('expense')):
                 return rule
         return self.env['nn.approval.rule']
+
+    def _step_approver_users(self, step):
+        """Users allowed to act on a step: the specific user, else the group."""
+        return step.user_id if step.user_id else step.group_id.users
 
     def _ordered_steps(self):
         self.ensure_one()
@@ -175,7 +193,11 @@ class ApprovalMixin(models.AbstractModel):
     # Permission helpers
     # ------------------------------------------------------------------
     def _check_step_approver(self, step):
-        if step.group_id not in self.env.user.groups_id:
+        if step.user_id:
+            if self.env.user != step.user_id:
+                raise AccessError(_(
+                    "Only %s can approve this step.", step.user_id.name))
+        elif step.group_id not in self.env.user.groups_id:
             raise AccessError(_(
                 "Only a member of '%s' can approve this step.",
                 step.group_id.full_name))
@@ -191,12 +213,12 @@ class ApprovalMixin(models.AbstractModel):
     # ------------------------------------------------------------------
     # Activities & notifications (best-effort)
     # ------------------------------------------------------------------
-    def _schedule_activities_for_group(self, group):
+    def _schedule_activities_for_users(self, users):
         self.ensure_one()
-        if not hasattr(self, 'activity_schedule') or not group:
+        if not hasattr(self, 'activity_schedule') or not users:
             return
         summary = _("Approval required: %s", self.display_name)
-        for user in group.users:
+        for user in users:
             try:
                 self.activity_schedule(
                     'mail.mail_activity_data_todo',
@@ -209,7 +231,7 @@ class ApprovalMixin(models.AbstractModel):
     def _schedule_step_activities(self):
         step = self._current_step()
         if step:
-            self._schedule_activities_for_group(step.group_id)
+            self._schedule_activities_for_users(self._step_approver_users(step))
 
     def _clear_approval_activities(self):
         if hasattr(self, 'activity_unlink'):

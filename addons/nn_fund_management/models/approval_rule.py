@@ -48,6 +48,13 @@ class ApprovalRule(models.Model):
     currency_id = fields.Many2one(
         'res.currency', default=lambda self: self.env.company.currency_id)
 
+    project_id = fields.Many2one(
+        'nn.project', string='Project',
+        help="Limit this rule to a specific project. Leave empty for any.")
+    expense_head_id = fields.Many2one(
+        'nn.expense.head', string='Expense Head',
+        help="Limit this rule to a specific expense head. Empty for any.")
+
     step_ids = fields.One2many(
         'nn.approval.rule.step', 'rule_id', string='Approval Steps',
         copy=True)
@@ -66,7 +73,8 @@ class ApprovalRule(models.Model):
                     "'Amount To' must be greater than or equal to "
                     "'Amount From'."))
 
-    def _matches(self, request_type, amount, company):
+    def _matches(self, request_type, amount, company, project=None,
+                 expense=None):
         """Return True if this rule applies to the given document."""
         self.ensure_one()
         if self.request_type not in ('any', request_type):
@@ -76,6 +84,10 @@ class ApprovalRule(models.Model):
         if amount < self.amount_min:
             return False
         if self.amount_max and amount > self.amount_max:
+            return False
+        if self.project_id and self.project_id != project:
+            return False
+        if self.expense_head_id and self.expense_head_id != expense:
             return False
         return True
 
@@ -93,3 +105,17 @@ class ApprovalRuleStep(models.Model):
     group_id = fields.Many2one(
         'res.groups', string='Approver Group', required=True,
         help="A user in this group must approve this step.")
+    user_id = fields.Many2one(
+        'res.users', string='Specific Approver',
+        help="If set, only this exact user may approve this step (must still "
+             "be a member of the group). Leave empty to allow any group "
+             "member.")
+
+    @api.constrains('user_id', 'group_id')
+    def _check_user_in_group(self):
+        for step in self:
+            if step.user_id and step.group_id not in step.user_id.groups_id:
+                raise ValidationError(_(
+                    "%(user)s must belong to the group '%(group)s' to be its "
+                    "approver.", user=step.user_id.name,
+                    group=step.group_id.full_name))

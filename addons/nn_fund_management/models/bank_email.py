@@ -30,7 +30,7 @@ class BankEmail(models.Model):
     """
     _name = 'nn.bank.email'
     _description = 'Bank Notification Email'
-    _inherit = ['mail.thread']
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'received_date desc, id desc'
 
     name = fields.Char(string='Subject', default='Bank Email')
@@ -116,6 +116,26 @@ class BankEmail(models.Model):
             'transaction_date': date_match.group(1) if date_match else False,
         }
 
+    def _notify_parse_failure(self, reason):
+        """Notify Finance (activity + chatter) that an email could not be
+        processed. Best-effort: never raise."""
+        self.ensure_one()
+        try:
+            self.message_post(
+                body=_("Bank email could not be processed: %s", reason),
+                subtype_xmlid='mail.mt_note')
+            group = self.env.ref('nn_fund_management.group_finance_user',
+                                 raise_if_not_found=False)
+            if group:
+                for user in group.users:
+                    self.activity_schedule(
+                        'mail.mail_activity_data_todo', user_id=user.id,
+                        summary=_("Bank email failed to process: %s",
+                                  self.display_name))
+        except Exception:  # noqa: BLE001 - notifications are best-effort
+            _logger.warning("Could not notify bank-email failure on %s",
+                            self.id)
+
     def _is_duplicate_reference(self, reference):
         if not reference:
             return False
@@ -160,6 +180,8 @@ class BankEmail(models.Model):
                     })
                     _logger.warning("Bank email %s: duplicate reference %s",
                                     rec.id, ref)
+                    rec._notify_parse_failure(
+                        _("Duplicate transaction reference: %s", ref))
                     continue
                 account = rec._find_fund_account(data)
                 if not account:
@@ -192,6 +214,7 @@ class BankEmail(models.Model):
             except Exception as exc:  # noqa: BLE001 - log, never crash gateway
                 rec.write({'state': 'failed', 'error_log': str(exc)})
                 _logger.exception("Failed to parse bank email %s", rec.id)
+                rec._notify_parse_failure(str(exc))
         return True
 
     # ------------------------------------------------------------------

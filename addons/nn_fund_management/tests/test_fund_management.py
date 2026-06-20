@@ -210,6 +210,57 @@ class TestConfigurableRules(TestFundManagementCommon):
         alloc.with_user(self.user_md).approve()
         self.assertEqual(alloc.state, 'approved')
 
+    def test_rule_matched_by_project(self):
+        """A project-specific rule applies only to that project."""
+        rule_b = self.env['nn.approval.rule'].create({
+            'name': 'Project B only (GM)', 'request_type': 'allocation',
+            'sequence': 1, 'project_id': self.project_b.id,
+            'step_ids': [(0, 0, {
+                'name': 'GM', 'sequence': 10,
+                'group_id': self.env.ref(
+                    'nn_fund_management.group_gm_approver').id})],
+        })
+        self._receive(1000000)
+        alloc_a = self.env['nn.fund.allocation'].with_user(
+            self.user_fund).create({
+                'fund_account_id': self.account.id, 'target_type': 'project',
+                'project_id': self.project_a.id, 'amount': 1000})
+        alloc_a.action_submit()
+        self.assertEqual(alloc_a.approval_rule_id.step_count, 2)  # default
+        alloc_b = self.env['nn.fund.allocation'].with_user(
+            self.user_fund).create({
+                'fund_account_id': self.account.id, 'target_type': 'project',
+                'project_id': self.project_b.id, 'amount': 1000})
+        alloc_b.action_submit()
+        self.assertEqual(alloc_b.approval_rule_id, rule_b)
+
+    def test_per_user_step_approver(self):
+        """A step with a specific user can be approved only by that user, even
+        if others are in the same group."""
+        gm2 = self.env['res.users'].create({
+            'name': 'gm2', 'login': 'gm2', 'email': 'gm2@example.com',
+            'notification_type': 'inbox',
+            'groups_id': [(6, 0, [self.env.ref(
+                'nn_fund_management.group_gm_approver').id])]})
+        self.env['nn.approval.rule'].create({
+            'name': 'Designated GM', 'request_type': 'allocation',
+            'sequence': 1,
+            'step_ids': [(0, 0, {
+                'name': 'GM', 'sequence': 10,
+                'group_id': self.env.ref(
+                    'nn_fund_management.group_gm_approver').id,
+                'user_id': self.user_gm.id})],
+        })
+        self._receive(1000000)
+        alloc = self.env['nn.fund.allocation'].with_user(self.user_fund).create({
+            'fund_account_id': self.account.id, 'target_type': 'project',
+            'project_id': self.project_a.id, 'amount': 1000})
+        alloc.action_submit()
+        with self.assertRaises(AccessError):
+            alloc.with_user(gm2).approve()           # in group, not designated
+        alloc.with_user(self.user_gm).approve()      # the designated approver
+        self.assertEqual(alloc.state, 'approved')
+
     def test_repeated_approval_no_double_movement(self):
         self._receive(1000000)
         alloc = self._allocate(600000)  # fully approved
@@ -493,6 +544,15 @@ class TestBankEmail(TestFundManagementCommon):
         be.action_parse()
         self.assertEqual(be.state, 'failed')
         self.assertTrue(be.error_log)
+
+    def test_failed_parse_notifies(self):
+        be = self.env['nn.bank.email'].create({
+            'name': 'Spam', 'raw_body': 'nothing parseable',
+            'message_id': '<msg-notify@bank>'})
+        be.action_parse()
+        self.assertEqual(be.state, 'failed')
+        # Finance is alerted via an activity that the email could not be parsed.
+        self.assertTrue(be.activity_ids)
 
     def test_same_email_not_processed_twice(self):
         self.env['nn.bank.email'].create({

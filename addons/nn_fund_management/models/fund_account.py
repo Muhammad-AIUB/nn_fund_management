@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
+from odoo.tools import float_compare
 
 
 class FundAccount(models.Model):
@@ -78,3 +80,15 @@ class FundAccount(models.Model):
                 - account.assigned_amount
                 - account.on_hold_amount
             )
+
+    @api.constrains('available_balance')
+    def _check_no_negative_balance(self):
+        """Safety net: the unassigned balance must never go negative."""
+        for account in self:
+            rounding = account.currency_id.rounding or 0.01
+            if float_compare(account.available_balance, 0.0,
+                             precision_rounding=rounding) < 0:
+                raise ValidationError(_(
+                    "This operation would make the available balance of "
+                    "'%(name)s' negative (%(val)s), which is not allowed.",
+                    name=account.display_name, val=account.available_balance))

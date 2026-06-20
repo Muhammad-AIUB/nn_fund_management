@@ -142,6 +142,17 @@ class FundTransfer(models.Model):
                 'source_expense_id', 'dest_type', 'dest_project_id',
                 'dest_expense_id'}
 
+    def _approval_match_context(self):
+        """Match approval rules against the transfer's source target."""
+        self.ensure_one()
+        src = self._get_source()
+        return {
+            'project': src if src and src._name == 'nn.project'
+            else self.env['nn.project'],
+            'expense': src if src and src._name == 'nn.expense.head'
+            else self.env['nn.expense.head'],
+        }
+
     # ------------------------------------------------------------------
     # Approval hooks
     # ------------------------------------------------------------------

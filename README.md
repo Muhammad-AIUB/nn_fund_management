@@ -113,9 +113,10 @@ docker compose up -d
 
 ## Testing instructions
 
-The module ships **44 automated tests** (unit/integration) covering balance
-maths, double-spend prevention, approval rules, all server-side blocks, and
-edge cases (editing/deleting locked records, missing approval rule, etc.).
+The module ships **47 automated tests** (unit/integration) covering balance
+maths, double-spend prevention, approval rules (incl. project-scoped and
+per-user steps), all server-side blocks, and edge cases (editing/deleting
+locked records, missing approval rule, bank-email failures, etc.).
 
 Run them on a throwaway database:
 
@@ -124,7 +125,7 @@ docker compose run --rm odoo odoo -d test_nn -i nn_fund_management \
   --test-enable --test-tags /nn_fund_management --stop-after-init
 ```
 
-Expected result: `0 failed, 0 error(s) of 44 tests`.
+Expected result: `0 failed, 0 error(s) of 47 tests`.
 
 > On Git Bash / MSYS, prefix the command with `MSYS_NO_PATHCONV=1` so the
 > `/nn_fund_management` test tag isn't rewritten into a Windows path.
@@ -163,10 +164,11 @@ Enforcement is **server-side**, not just hidden buttons:
 ## Bonus features (all implemented)
 
 - **Configurable approval rules** — *Configuration → Approval Rules*. Match by
-  request type, amount range and company; define an ordered list of approver
-  groups (e.g. up to 50k → GM; 50k–200k → GM, Finance; above → GM, Finance,
-  MD). The matching rule is resolved at submission and frozen on the document.
-  A default GM→MD rule ships out of the box.
+  request type, amount range, company, **and specific project/expense head**;
+  define an ordered list of steps, each an approver **group or a specific user**
+  (e.g. up to 50k → GM; 50k–200k → GM, Finance; above → GM, Finance, MD). The
+  matching rule is resolved at submission and frozen on the document. A default
+  GM→MD rule ships out of the box.
 - **Dashboard** — *Dashboard* menu. Live KPIs (received, unassigned, held,
   assigned, spent, pending approvals) plus pending-approval, project-balance,
   expense-balance and recent-movement lists.
@@ -177,8 +179,9 @@ Enforcement is **server-side**, not just hidden buttons:
 - **Bank email integration** — *Operations → Bank Emails*. A mail alias
   (`bank-funds`) or a manual paste feeds bank notifications through a parser
   that creates incoming funds in *Pending Verification*; de-dupes by
-  message-id, detects duplicate references, and logs parse failures. No bank
-  credentials are stored in the code.
+  message-id, detects duplicate references, logs parse failures **and raises a
+  Finance activity when an email cannot be processed**. No bank credentials are
+  stored in the code.
 
 ## Real-time discussion (chat)
 
