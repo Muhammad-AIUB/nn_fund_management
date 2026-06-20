@@ -43,6 +43,36 @@ class FundAccount(models.Model):
     allocation_ids = fields.One2many(
         'nn.fund.allocation', 'fund_account_id', string='Allocations')
 
+    incoming_fund_count = fields.Integer(compute='_compute_counts')
+    allocation_count = fields.Integer(compute='_compute_counts')
+
+    def _compute_counts(self):
+        for acc in self:
+            acc.incoming_fund_count = len(acc.incoming_fund_ids)
+            acc.allocation_count = len(acc.allocation_ids)
+
+    def action_view_incoming_funds(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Incoming Funds'),
+            'res_model': 'nn.incoming.fund',
+            'view_mode': 'tree,form',
+            'domain': [('fund_account_id', '=', self.id)],
+            'context': {'default_fund_account_id': self.id},
+        }
+
+    def action_view_allocations(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Allocations'),
+            'res_model': 'nn.fund.allocation',
+            'view_mode': 'tree,form',
+            'domain': [('fund_account_id', '=', self.id)],
+            'context': {'default_fund_account_id': self.id},
+        }
+
     total_received = fields.Monetary(
         compute='_compute_balances', store=True,
         help="Sum of all confirmed incoming funds.")

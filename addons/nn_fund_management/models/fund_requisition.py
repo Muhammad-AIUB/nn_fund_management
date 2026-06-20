@@ -49,8 +49,24 @@ class FundRequisition(models.Model):
         string='Available at Source', compute='_compute_target_available')
 
     bill_ids = fields.One2many('nn.bill', 'requisition_id', string='Bills')
+    bill_count = fields.Integer(compute='_compute_bill_count')
     billed_amount = fields.Monetary(
         string='Billed Amount', compute='_compute_billing', store=True)
+
+    def _compute_bill_count(self):
+        for rec in self:
+            rec.bill_count = len(rec.bill_ids)
+
+    def action_view_bills(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Bills'),
+            'res_model': 'nn.bill',
+            'view_mode': 'tree,form',
+            'domain': [('requisition_id', '=', self.id)],
+            'context': {'default_requisition_id': self.id},
+        }
     remaining_billable = fields.Monetary(
         string='Remaining Billable', compute='_compute_billing', store=True,
         help="Approved amount still available to bill against.")

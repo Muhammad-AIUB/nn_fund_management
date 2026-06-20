@@ -54,6 +54,48 @@ class FundTargetMixin(models.AbstractModel):
         help="Funds free to requisition or transfer "
              "(allocated + incoming - outgoing - holds - spent).")
 
+    allocation_count = fields.Integer(compute='_compute_doc_counts')
+    requisition_count = fields.Integer(compute='_compute_doc_counts')
+
+    def _compute_doc_counts(self):
+        for rec in self:
+            rec.allocation_count = (len(rec.allocation_ids)
+                                    if 'allocation_ids' in rec._fields else 0)
+            rec.requisition_count = (len(rec.requisition_ids)
+                                     if 'requisition_ids' in rec._fields else 0)
+
+    def _target_field(self):
+        return 'project_id' if self._name == 'nn.project' else 'expense_head_id'
+
+    def _target_type_value(self):
+        return 'project' if self._name == 'nn.project' else 'expense_head'
+
+    def action_view_allocations(self):
+        self.ensure_one()
+        field = self._target_field()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Allocations'),
+            'res_model': 'nn.fund.allocation',
+            'view_mode': 'tree,form',
+            'domain': [(field, '=', self.id)],
+            'context': {'default_target_type': self._target_type_value(),
+                        'default_' + field: self.id},
+        }
+
+    def action_view_requisitions(self):
+        self.ensure_one()
+        field = self._target_field()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Requisitions'),
+            'res_model': 'nn.fund.requisition',
+            'view_mode': 'tree,form',
+            'domain': [(field, '=', self.id)],
+            'context': {'default_target_type': self._target_type_value(),
+                        'default_' + field: self.id},
+        }
+
     def _get_balance_components(self):
         """Return the raw amounts that make up the balances for one record.
 

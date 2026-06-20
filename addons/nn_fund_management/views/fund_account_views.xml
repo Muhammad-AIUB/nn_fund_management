@@ -25,6 +25,18 @@
         <field name="arch" type="xml">
             <form string="Fund Account">
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_incoming_funds" type="object"
+                                class="oe_stat_button" icon="fa-download">
+                            <field name="incoming_fund_count" widget="statinfo"
+                                   string="Incoming"/>
+                        </button>
+                        <button name="action_view_allocations" type="object"
+                                class="oe_stat_button" icon="fa-share-alt">
+                            <field name="allocation_count" widget="statinfo"
+                                   string="Allocations"/>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <label for="name"/>
                         <h1><field name="name" placeholder="e.g. NN Operating Account"/></h1>

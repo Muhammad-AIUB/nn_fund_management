@@ -12,7 +12,7 @@
                 <field name="transaction_reference"/>
                 <field name="amount"/>
                 <field name="incoming_fund_id"/>
-                <field name="currency_id" column_invisible="1"/>
+                <field name="currency_id" invisible="1"/>
                 <field name="state" widget="badge"
                        decoration-info="state == 'received'"
                        decoration-success="state == 'parsed'"
@@ -51,7 +51,7 @@
                             <field name="amount"/>
                             <field name="sender_info"/>
                             <field name="incoming_fund_id"/>
-                            <field name="currency_id" column_invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
                         </group>
                     </group>
                     <group string="Error Log" invisible="state != 'failed'">

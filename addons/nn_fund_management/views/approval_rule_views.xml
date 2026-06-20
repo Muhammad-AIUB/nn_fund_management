@@ -14,7 +14,7 @@
                 <field name="step_count" string="Steps"/>
                 <field name="company_id" groups="base.group_multi_company"/>
                 <field name="active" widget="boolean_toggle"/>
-                <field name="currency_id" column_invisible="1"/>
+                <field name="currency_id" invisible="1"/>
             </tree>
         </field>
     </record>
@@ -39,7 +39,7 @@
                         <group>
                             <field name="amount_min"/>
                             <field name="amount_max"/>
-                            <field name="currency_id" column_invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
                             <field name="company_id"
                                    groups="base.group_multi_company"/>
                             <field name="project_id"/>

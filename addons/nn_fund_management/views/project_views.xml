@@ -14,7 +14,7 @@
                 <field name="transfer_hold" sum="Transfer Hold"/>
                 <field name="total_spent" sum="Spent"/>
                 <field name="available_fund" sum="Available"/>
-                <field name="currency_id" column_invisible="1"/>
+                <field name="currency_id" invisible="1"/>
                 <field name="state" widget="badge"
                        decoration-success="state == 'open'"
                        decoration-muted="state == 'closed'"/>
@@ -28,6 +28,18 @@
         <field name="arch" type="xml">
             <form string="Project">
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_allocations" type="object"
+                                class="oe_stat_button" icon="fa-share-alt">
+                            <field name="allocation_count" widget="statinfo"
+                                   string="Allocations"/>
+                        </button>
+                        <button name="action_view_requisitions" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="requisition_count" widget="statinfo"
+                                   string="Requisitions"/>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <label for="name"/>
                         <h1><field name="name" placeholder="Project name"/></h1>
@@ -44,7 +56,7 @@
                             <field name="date_end"/>
                             <field name="company_id"
                                    groups="base.group_multi_company"/>
-                            <field name="currency_id" column_invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
                         </group>
                     </group>
                     <group string="Balances">
