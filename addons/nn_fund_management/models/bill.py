@@ -123,6 +123,12 @@ class Bill(models.Model):
             if rec.state != 'draft':
                 raise UserError(_("Only draft bills can be posted."))
             req = rec.requisition_id
+            # Lock the requisition so two bills posted at the same time can't
+            # both pass the remaining-billable check (row lock held to commit).
+            rec.env.cr.execute(
+                'SELECT id FROM nn_fund_requisition WHERE id = %s FOR UPDATE',
+                (req.id,))
+            req.invalidate_recordset(['billed_amount', 'remaining_billable'])
             if req.state != 'approved':
                 raise UserError(_(
                     "Bills can only be posted against an approved requisition."))

@@ -156,6 +156,17 @@ class FundTransfer(models.Model):
     # ------------------------------------------------------------------
     # Approval hooks
     # ------------------------------------------------------------------
+    def _lock_balance_source(self):
+        """Serialise concurrent transfers out of the same source (row lock held
+        until commit; see allocation for rationale)."""
+        self.ensure_one()
+        src = self._get_source()
+        if src:
+            self.env.cr.execute(
+                'SELECT id FROM "%s" WHERE id = %%s FOR UPDATE'
+                % src._table, (src.id,))
+            src.invalidate_recordset()
+
     def _check_can_submit(self):
         self.ensure_one()
         available = self.source_available

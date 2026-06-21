@@ -113,7 +113,7 @@ docker compose up -d
 
 ## Testing instructions
 
-The module ships **49 automated tests** (unit/integration) covering balance
+The module ships **50 automated tests** (unit/integration) covering balance
 maths, double-spend prevention, approval rules (incl. project-scoped and
 per-user steps), all server-side blocks, and edge cases (editing/deleting
 locked records, missing approval rule, bank-email failures, etc.).
@@ -125,7 +125,7 @@ docker compose run --rm odoo odoo -d test_nn -i nn_fund_management \
   --test-enable --test-tags /nn_fund_management --stop-after-init
 ```
 
-Expected result: `0 failed, 0 error(s) of 49 tests`.
+Expected result: `0 failed, 0 error(s) of 50 tests`.
 
 > On Git Bash / MSYS, prefix the command with `MSYS_NO_PATHCONV=1` so the
 > `/nn_fund_management` test tag isn't rewritten into a Windows path.
@@ -137,6 +137,29 @@ Receive 1,000,000 → allocate 600,000 to Project A (shows on hold) → reject
 approved) → requisition 150,000 on B → bill 100,000 (50,000 remains) → try to
 bill 60,000 (blocked) → try to bill Project A against B's requisition
 (blocked). All of these are also asserted by the automated tests.
+
+---
+
+## Reliability & concurrency
+
+The core guarantee (no double-spending) must hold even when two users act at the
+same time. The naive "check the balance, then reserve it" pattern has a race: two
+concurrent submissions can both read the same available balance and both pass.
+
+To prevent this, each submission **locks the balance source row** before
+checking and reserving:
+
+- allocation → locks the fund account, requisition → locks the project/expense
+  head, transfer → locks the source, bill → locks the requisition.
+- Implemented with a single `SELECT ... FOR UPDATE` (the one place direct SQL is
+  used — the ORM has no portable row lock). The lock is held until the
+  transaction commits, so a second submission waits, then re-reads the now-reduced
+  balance and is correctly blocked.
+
+Combined with: balances **computed from document state** (so a repeated click is
+idempotent and can never double-move funds), DB-level constraints (unique
+transaction reference, positive amounts), a guarded state machine, and a
+money-conservation invariant asserted by the tests.
 
 ---
 

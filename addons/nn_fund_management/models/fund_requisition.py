@@ -145,6 +145,17 @@ class FundRequisition(models.Model):
     # ------------------------------------------------------------------
     # Approval hooks
     # ------------------------------------------------------------------
+    def _lock_balance_source(self):
+        """Serialise concurrent requisitions on the same project/expense head
+        (row lock held until commit; see allocation for rationale)."""
+        self.ensure_one()
+        target = self._get_target()
+        if target:
+            self.env.cr.execute(
+                'SELECT id FROM "%s" WHERE id = %%s FOR UPDATE'
+                % target._table, (target.id,))
+            target.invalidate_recordset()
+
     def _check_can_submit(self):
         self.ensure_one()
         available = self.target_available

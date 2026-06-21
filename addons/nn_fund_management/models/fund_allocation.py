@@ -90,6 +90,20 @@ class FundAllocation(models.Model):
     # ------------------------------------------------------------------
     # Approval hooks
     # ------------------------------------------------------------------
+    def _lock_balance_source(self):
+        """Serialise concurrent submissions on the same fund account. Raw SQL
+        row lock is used because the ORM has no portable SELECT ... FOR UPDATE;
+        it is held until the transaction commits, so a second submission waits
+        and then re-reads the (now reduced) available balance."""
+        self.ensure_one()
+        if self.fund_account_id:
+            self.env.cr.execute(
+                'SELECT id FROM nn_fund_account WHERE id = %s FOR UPDATE',
+                (self.fund_account_id.id,))
+            self.fund_account_id.invalidate_recordset(
+                ['total_received', 'on_hold_amount', 'assigned_amount',
+                 'available_balance'])
+
     def _check_can_submit(self):
         """Block submission if it would overdraw the account's unassigned
         balance. Server-side guarantee against double-allocation."""

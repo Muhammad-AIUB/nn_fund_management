@@ -254,6 +254,13 @@ class ApprovalMixin(models.AbstractModel):
     # ------------------------------------------------------------------
     # Hooks for concrete models (default: no-op)
     # ------------------------------------------------------------------
+    def _lock_balance_source(self):
+        """Lock the row whose balance gates this request, so two users
+        submitting at the same time are serialised and the same money can't be
+        reserved twice (prevents the check-then-reserve race). Overridden by
+        concrete models. Default: no lock."""
+        return True
+
     def _check_can_submit(self):
         """Validate availability before placing a hold. Override to raise."""
         return True
@@ -277,6 +284,9 @@ class ApprovalMixin(models.AbstractModel):
         for rec in self:
             if rec.state != 'draft':
                 raise UserError(_("Only draft requests can be submitted."))
+            # Lock the balance source first, then validate availability, so
+            # concurrent submissions can't both pass the same check.
+            rec._lock_balance_source()
             rec._check_can_submit()
             rule = rec._resolve_approval_rule()
             if not rule:

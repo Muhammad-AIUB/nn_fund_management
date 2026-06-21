@@ -499,6 +499,39 @@ class TestChat(TestFundManagementCommon):
         self.assertEqual(alloc.channel_id, channel)  # same channel reused
 
 
+class TestInvariants(TestFundManagementCommon):
+    """The core money-conservation guarantee must hold at every step."""
+
+    def _assert_account_conserved(self):
+        acc = self.account
+        self.assertAlmostEqual(
+            acc.total_received,
+            acc.available_balance + acc.on_hold_amount + acc.assigned_amount,
+            places=2,
+            msg="received != available + on_hold + assigned")
+
+    def test_money_conservation_through_lifecycle(self):
+        self._receive(1000000)
+        self._assert_account_conserved()
+
+        alloc = self._allocate(600000, approve=False)   # submitted -> on hold
+        self._assert_account_conserved()
+        self.assertEqual(self.account.on_hold_amount, 600000)
+
+        alloc.with_user(self.user_gm).approve()
+        alloc.with_user(self.user_md).approve()          # approved -> assigned
+        self._assert_account_conserved()
+        self.assertEqual(self.account.assigned_amount, 600000)
+        # Money assigned on the account equals what landed on the target.
+        self.assertEqual(self.account.assigned_amount,
+                         self.project_a.total_allocated)
+
+        # Cancelling an approved request returns the money - still conserved.
+        alloc.with_user(self.user_admin).action_cancel()
+        self._assert_account_conserved()
+        self.assertEqual(self.account.available_balance, 1000000)
+
+
 class TestBankEmail(TestFundManagementCommon):
 
     SAMPLE = ("You have received BDT 1,000,000.00 in account XXXX1234 from "
