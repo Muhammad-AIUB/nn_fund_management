@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Loads the spec's §13 sample scenario so a reviewer sees a live,
+         fully-populated system right after install (only with demo data). -->
+    <function model="nn.fund.account" name="_nn_load_demo_data"/>
+</odoo>

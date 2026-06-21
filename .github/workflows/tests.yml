@@ -1,0 +1,51 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  odoo-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: odoo
+          POSTGRES_PASSWORD: odoo
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U odoo"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run nn_fund_management test suite (Odoo 17)
+        run: |
+          docker run --rm --network=host \
+            -v "${{ github.workspace }}/addons:/mnt/extra-addons" \
+            odoo:17.0 \
+            odoo -d ci_db -i nn_fund_management \
+              --test-enable --test-tags /nn_fund_management \
+              --stop-after-init --no-http \
+              --db_host=localhost --db_user=odoo --db_password=odoo \
+              2>&1 | tee odoo.log
+
+      - name: Check test results
+        run: |
+          if ! grep -qE "[0-9]+ failed, [0-9]+ error\(s\) of [0-9]+ tests" odoo.log; then
+            echo "::error::No test summary found - the run likely crashed."
+            exit 1
+          fi
+          if grep -qE "[1-9][0-9]* (failed|error\(s\))" odoo.log; then
+            echo "::error::Some tests failed."
+            grep -E "(FAIL|ERROR):" odoo.log || true
+            exit 1
+          fi
+          echo "All tests passed."

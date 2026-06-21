@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import float_compare
+
+_logger = logging.getLogger(__name__)
 
 
 class FundAccount(models.Model):
@@ -122,6 +126,82 @@ class FundAccount(models.Model):
                 "Balance fields are calculated automatically and cannot be "
                 "edited manually: %s", ', '.join(sorted(forbidden))))
         return super().write(vals)
+
+    @api.model
+    def _nn_load_demo_data(self):
+        """Build the spec's §13 sample scenario as demo data, so the module
+        shows a live, fully-populated system immediately after install. Runs the
+        real workflow (so balances, approval history and the dashboard all
+        populate). Best-effort: a glitch here must never break installation."""
+        try:
+            admin = self.env.ref('base.user_admin', raise_if_not_found=False)
+            group = self.env.ref('nn_fund_management.group_fund_admin',
+                                 raise_if_not_found=False)
+            if not admin or not group:
+                return
+            admin.sudo().write({'groups_id': [(4, group.id)]})
+            env = self.env(user=admin.id)
+            icp = env['ir.config_parameter'].sudo()
+            previous = icp.get_param('nn_fund_management.allow_self_approval')
+            # Temporarily allow self-approval so the single demo user can drive
+            # the whole approval chain; restored to the secure default after.
+            icp.set_param('nn_fund_management.allow_self_approval', 'True')
+
+            acc = env['nn.fund.account'].create({
+                'name': 'NN Operating Account', 'account_type': 'bank',
+                'bank_name': 'Demo Bank', 'account_number': '0099001122'})
+            proj_a = env['nn.project'].create({'name': 'Skyline Tower'})
+            proj_b = env['nn.project'].create({'name': 'Riverside Park'})
+
+            inflow = env['nn.incoming.fund'].create({
+                'fund_account_id': acc.id, 'amount': 1000000,
+                'transaction_reference': 'DEMO-INFLOW-001',
+                'source': 'Head Office', 'description': 'Quarterly funding'})
+            inflow.action_confirm()
+
+            alloc = env['nn.fund.allocation'].create({
+                'fund_account_id': acc.id, 'target_type': 'project',
+                'project_id': proj_a.id, 'amount': 600000,
+                'purpose': 'Phase 1 construction'})
+            alloc.action_submit()
+            alloc.approve('Approved by GM')
+            alloc.approve('Approved by MD')
+
+            # A second request left pending, so the dashboard shows work to do.
+            pending = env['nn.fund.allocation'].create({
+                'fund_account_id': acc.id, 'target_type': 'project',
+                'project_id': proj_b.id, 'amount': 120000,
+                'purpose': 'Landscaping budget (awaiting approval)'})
+            pending.action_submit()
+
+            transfer = env['nn.fund.transfer'].create({
+                'source_type': 'project', 'source_project_id': proj_a.id,
+                'dest_type': 'project', 'dest_project_id': proj_b.id,
+                'amount': 200000, 'reason': 'Re-balance project budgets'})
+            transfer.action_submit()
+            transfer.approve('GM')
+            transfer.approve('MD')
+
+            req = env['nn.fund.requisition'].create({
+                'target_type': 'project', 'project_id': proj_b.id,
+                'amount': 150000, 'purpose': 'Vendor payments'})
+            req.action_submit()
+            req.approve('GM')
+            req.approve('MD')
+
+            bill = env['nn.bill'].create({
+                'requisition_id': req.id, 'amount': 100000,
+                'target_type': 'project', 'project_id': proj_b.id,
+                'reference': 'INV-2025-0142'})
+            bill.action_post()
+
+            icp.set_param('nn_fund_management.allow_self_approval',
+                          previous or 'False')
+            _logger.info("NN Fund Management demo scenario loaded.")
+        except Exception:  # noqa: BLE001 - demo data must never block install
+            _logger.exception(
+                "NN Fund Management demo data could not be loaded")
+        return True
 
     @api.constrains('available_balance')
     def _check_no_negative_balance(self):

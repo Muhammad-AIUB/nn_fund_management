@@ -34,6 +34,9 @@
         'views/menus.xml',
         'views/res_config_settings_views.xml',
     ],
+    'demo': [
+        'demo/demo_data.xml',
+    ],
     'assets': {
         'web.assets_backend': [
             'nn_fund_management/static/src/scss/form_buttons.scss',

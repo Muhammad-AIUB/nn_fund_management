@@ -1,5 +1,7 @@
 # NN Fund Management
 
+[![tests](https://github.com/Muhammad-AIUB/nn_fund_management/actions/workflows/tests.yml/badge.svg)](https://github.com/Muhammad-AIUB/nn_fund_management/actions/workflows/tests.yml)
+
 A custom Odoo module for **NN Services & Engineering Ltd.** that manages the
 full lifecycle of company funds — incoming funds, allocations to projects and
 expense heads, requisitions, bills, and transfers — under a two-level
@@ -61,6 +63,12 @@ Then open **http://localhost:8069**.
 2. On install, a `post_init_hook` grants the default **admin** user the
    *Fund Administrator* role, so the **Fund Management** app is immediately
    visible and usable.
+3. **Demo data** — when the database is created **with demo data** (Odoo's
+   default), the module auto-loads the spec's §13 sample scenario: a funded
+   account, two projects, an approved allocation, an approved transfer, a
+   requisition with a partial bill (50,000 still billable), a pending approval,
+   and the full audit trail. So you can open the **Dashboard** and explore a
+   live, populated system without any setup. (Use `--without-demo=all` to skip.)
 
 ### Upgrading the module after code changes
 
