@@ -1,0 +1,43 @@
+# Production-oriented Compose for a public deployment (e.g. an Azure VM).
+#
+# Differences vs. docker-compose.yml (local dev):
+#   - no `--dev=all` (dev mode is insecure + slower; off in production)
+#   - mounts ./odoo.conf with a master password + hidden DB manager
+#   - restart: unless-stopped, so the stack survives VM reboots
+# The application stack is identical: Odoo 17 + PostgreSQL 15, addons mounted.
+# See DEPLOY_AZURE.md for the full step-by-step.
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: odoo
+      POSTGRES_USER: odoo
+      # Internal-only credential: the Postgres port is NOT published to the host,
+      # so this is reachable only by the odoo container on the private network.
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
+
+  odoo:
+    image: odoo:17.0
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8069:8069"
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo
+    volumes:
+      - odoo-web-data:/var/lib/odoo
+      - ./addons:/mnt/extra-addons
+      - ./odoo.conf:/etc/odoo/odoo.conf:ro
+    # No `command:` here on purpose -> the image's default starts the production
+    # server (dev mode OFF) and reads /etc/odoo/odoo.conf.
+
+volumes:
+  odoo-db-data:
+  odoo-web-data:
