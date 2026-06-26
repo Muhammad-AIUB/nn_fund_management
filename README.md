@@ -13,6 +13,21 @@ expense heads, requisitions, bills, and transfers — under a two-level
 
 ---
 
+## 🚀 Live demo
+
+| | |
+|---|---|
+| **URL** | http://20.2.236.93:8069/web/login |
+| **Login** | `admin` |
+| **Password** | `admin` |
+
+The instance is preloaded with the §13 sample scenario (funded account, two
+projects, an approved allocation and transfer, a requisition with a partial
+bill, a pending approval and the full audit trail). After logging in, open the
+apps grid (▦) → **Fund Management** → **Dashboard**.
+
+---
+
 ## Odoo version
 
 - **Odoo 17.0** (Community)
